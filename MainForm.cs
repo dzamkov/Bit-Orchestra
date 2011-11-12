@@ -9,7 +9,7 @@ namespace BitOrchestra
     /// <summary>
     /// The main form for the application.
     /// </summary>
-    public class MainForm : Form
+    public class MainForm : Form, IDisposable
     {
         public MainForm()
         {
@@ -26,6 +26,7 @@ namespace BitOrchestra
             text.Multiline = true;
             text.ScrollBars = ScrollBars.Vertical;
             this.Controls.Add(text);
+            text.TextChanged += this._TextChanged;
             this._Text = text;
 
             // Menu
@@ -34,8 +35,14 @@ namespace BitOrchestra
             menu.Items.Add("Load");
             menu.Items.Add("Export");
             menu.Items.Add(this._PlayStop = new ToolStripMenuItem("Play", null, this._PlayStopClick, Keys.F5));
+            this._SetPlayStopState(PlayStopState.Play);
             this.Controls.Add(menu);
             this._Menu = menu;
+        }
+
+        public void Dispose()
+        {
+            this._Sound.Dispose();
         }
 
         private void _Play()
@@ -46,31 +53,70 @@ namespace BitOrchestra
             if (Parser.Parse(this._Text.Text, out expr, out opts, out errorindex))
             {
                 this._Sound.Play(4096, expr, opts);
-                this._PlayStop.Text = "Stop";
+                this._SetPlayStopState(PlayStopState.Stop);
             }
             else
             {
                 this._Text.Select(errorindex, 0);
+                this._SetPlayStopState(PlayStopState.Play);
             }
-        }
-
-        private void _Stop()
-        {
-            this._Sound.Stop();
-            this._PlayStop.Text = "Play";
         }
 
         private void _PlayStopClick(object sender, EventArgs e)
         {
-            if (this._Sound.IsPlaying)
-                this._Stop();
-            else
-                this._Play();
+            switch (this._PlayStopState)
+            {
+                case PlayStopState.Play:
+                    this._Play();
+                    break;
+                case PlayStopState.Stop:
+                    this._Sound.Stop();
+                    this._SetPlayStopState(PlayStopState.Play);
+                    break;
+                case PlayStopState.Update:
+                    this._Sound.Stop();
+                    this._Play();
+                    break;
+            }
         }
 
+        private void _TextChanged(object sender, EventArgs e)
+        {
+            if (this._PlayStopState == PlayStopState.Stop)
+                this._SetPlayStopState(PlayStopState.Update);
+        }
+
+        private void _SetPlayStopState(PlayStopState State)
+        {
+            this._PlayStopState = State;
+            switch (State)
+            {
+                case PlayStopState.Play:
+                    this._PlayStop.Text = "Play";
+                    break;
+                case PlayStopState.Stop:
+                    this._PlayStop.Text = "Stop";
+                    break;
+                case PlayStopState.Update:
+                    this._PlayStop.Text = "Update";
+                    break;
+            }
+        }
+
+        private PlayStopState _PlayStopState;
         private ToolStripMenuItem _PlayStop;
         private TextBox _Text;
         private MenuStrip _Menu;
         private Sound _Sound;
+    }
+
+    /// <summary>
+    /// Indicates a possible state for the play/stop button.
+    /// </summary>
+    public enum PlayStopState
+    {
+        Stop,
+        Play,
+        Update
     }
 }

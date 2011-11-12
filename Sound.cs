@@ -50,7 +50,7 @@ namespace BitOrchestra
         /// </summary>
         public void Play(int BufferSize, Evaluator Evaluator, SoundOptions Options)
         {
-            this._Player.Init(new _Stream(BufferSize, Evaluator, Options.Rate, Options.Offset));
+            this._Player.Init(this._Stream = new _EvaluatorStream(BufferSize, Evaluator, Options.Rate, Options.Offset));
             this._Player.Play();
         }
 
@@ -67,6 +67,13 @@ namespace BitOrchestra
         /// </summary>
         public void Stop()
         {
+            if (this._Stream != null)
+            {
+                // NAudio needs to be persuaded to make sure the stream stays stopped.
+                this._Stream.Stop();
+                this._Stream.Dispose();
+                this._Stream = null;
+            }
             this._Player.Stop();
         }
 
@@ -75,15 +82,23 @@ namespace BitOrchestra
             this._Player.Dispose();
         }
 
-        private class _Stream : WaveStream
+        private class _EvaluatorStream : WaveStream
         {
-            public _Stream(int BufferSize, Evaluator Evaluator, int Rate, int Parameter)
+            public _EvaluatorStream(int BufferSize, Evaluator Evaluator, int Rate, int Parameter)
             {
                 this._Rate = Rate;
                 this._Evaluator = Evaluator;
                 this._Buffer = new int[BufferSize];
                 this._Offset = BufferSize;
                 this._Parameter = Parameter;
+            }
+
+            /// <summary>
+            /// Prevents this stream from giving any more samples.
+            /// </summary>
+            public void Stop()
+            {
+                this._Evaluator = null;
             }
 
             public override WaveFormat WaveFormat
@@ -113,6 +128,11 @@ namespace BitOrchestra
 
             public override int Read(byte[] buffer, int offset, int count)
             {
+                if (this._Evaluator == null)
+                {
+                    return 0;
+                }
+
                 int ocount = count;
                 while (true)
                 {
@@ -157,5 +177,6 @@ namespace BitOrchestra
         }
 
         private IWavePlayer _Player;
+        private _EvaluatorStream _Stream;
     }
 }
