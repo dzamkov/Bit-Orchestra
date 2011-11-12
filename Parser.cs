@@ -114,12 +114,41 @@ namespace BitOrchestra
             return found;
         }
 
-        /// Determines wether the given character is a digit.
+        /// <summary>
+        /// Determines wether the given character is a decimal digit, if so, returns its value.
         /// </summary>
-        public static bool IsDigit(char Char)
+        public static bool IsDecimalDigit(char Char, ref int Value)
         {
             int i = (int)Char;
-            if (i >= 48 && i <= 57) return true;
+            if (i >= 48 && i <= 57)
+            {
+                Value = i - 48;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Determines wether the given character is a hexadecimal digit, if so, returns its value.
+        /// </summary>
+        public static bool IsHexadecimalDigit(char Char, ref int Value)
+        {
+            int i = (int)Char;
+            if (i >= 48 && i <= 57)
+            {
+                Value = i - 48;
+                return true;
+            }
+            if (i >= 65 && i <= 70)
+            {
+                Value = i - 65 + 10;
+                return true;
+            }
+            if (i >= 97 && i <= 102)
+            {
+                Value = i - 97 + 10;
+                return true;
+            }
             return false;
         }
 
@@ -146,7 +175,8 @@ namespace BitOrchestra
                 char c = Text[cur];
                 if (cur == Index)
                 {
-                    if (Parser.IsDigit(c) || !Parser.IsWordChar(c))
+                    int dummy = 0;
+                    if (Parser.IsDecimalDigit(c, ref dummy) || !Parser.IsWordChar(c))
                         break;
                 }
                 else
@@ -282,13 +312,84 @@ namespace BitOrchestra
         }
 
         /// <summary>
+        /// Tries parsing a literal term in the given text.
+        /// </summary>
+        public static bool AcceptLiteral(string Text, ref int Index, ref Expression Term, out int ErrorIndex)
+        {
+            ErrorIndex = Index;
+            int cur = Index;
+
+            // Determine base, if any
+            int b = 10;
+            if (Text.Length - Index >= 2)
+            {
+                cur += 2;
+                switch (Text.Substring(Index, 2))
+                {
+                    case "0d":
+                        b = 10;
+                        break;
+                    case "0b":
+                        b = 2;
+                        break;
+                    case "0h":
+                    case "0x":
+                        b = 16;
+                        break;
+                    default:
+                        cur -= 2;
+                        break;
+                }
+            }
+
+            // Find digits
+            List<int> digs = new List<int>();
+            bool found = false;
+            while (cur < Text.Length)
+            {
+                int dig = 0;
+                if (IsHexadecimalDigit(Text[cur], ref dig) && dig < b)
+                {
+                    found = true;
+                    digs.Add(dig);
+                    cur++;
+                    continue;
+                }
+                else
+                {
+                    ErrorIndex = cur;
+                    break;
+                }
+            }
+
+            if (found)
+            {
+                int val = 0;
+                int r = 1;
+                for (int t = digs.Count - 1; t >= 0; t--)
+                {
+                    val += digs[t] * r;
+                    r *= b;
+                }
+
+                Term = new ConstantExpression(val);
+                Index = cur;
+                return true;
+            }
+            
+            return false;
+        }
+
+        /// <summary>
         /// Tries parsing a term in the given text.
         /// </summary>
         public static bool AcceptTerm(string Text, ref int Index, ref Expression Term, out int ErrorIndex)
         {
+            if (AcceptLiteral(Text, ref Index, ref Term, out ErrorIndex))
+                return true;
+
             int cur = Index;
             string word = null;
-            ErrorIndex = Index;
 
             if (AcceptWord(Text, ref cur, ref word))
             {

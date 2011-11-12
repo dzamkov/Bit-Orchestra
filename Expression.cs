@@ -119,6 +119,14 @@ namespace BitOrchestra
                     if (constright)
                         return new AddConstantEvaluator(lefteval, rightval);
                     return new AddEvaluator(BufferSize, lefteval, righteval);
+                case BinaryOperation.Multiply:
+                    if (constleft && constright)
+                        return new ConstantEvaluator(leftval * rightval);
+                    if (constleft)
+                        return new MultiplyConstantEvaluator(righteval, leftval);
+                    if (constright)
+                        return new MultiplyConstantEvaluator(lefteval, rightval);
+                    return new MultiplyEvaluator(BufferSize, lefteval, righteval);
                 default:
                     throw new NotImplementedException();
             }

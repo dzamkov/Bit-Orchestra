@@ -17,14 +17,7 @@ namespace BitOrchestra
         public static void Main(string[] Args)
         {
             Application.EnableVisualStyles();
-
-            MainForm mf = new MainForm();
-            mf.Show();
-
-            while (mf.Visible)
-            {
-                Application.DoEvents();
-            }
+            Application.Run(new MainForm());
         }
     }
 }

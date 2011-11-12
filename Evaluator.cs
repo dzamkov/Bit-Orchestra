@@ -155,4 +155,52 @@ namespace BitOrchestra
             }
         }
     }
+
+    /// <summary>
+    /// An evaluator that multiplies two values together.
+    /// </summary>
+    public sealed class MultiplyEvaluator : BinaryEvaluator
+    {
+        public MultiplyEvaluator(int BufferSize, Evaluator Left, Evaluator Right)
+            : base(BufferSize, Left, Right)
+        {
+
+        }
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            this.Left.Generate(Start, Buffer);
+            this.Right.Generate(Start, this.TempBuffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] *= this.TempBuffer[t];
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that multiplies a constant value to a source evaluator.
+    /// </summary>
+    public sealed class MultiplyConstantEvaluator : UnaryEvaluator
+    {
+        public MultiplyConstantEvaluator(Evaluator Source, int Amount)
+            : base(Source)
+        {
+            this.Amount = Amount;
+        }
+
+        /// <summary>
+        /// The amount that the source is multiplied by.
+        /// </summary>
+        public readonly int Amount;
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            this.Source.Generate(Start, Buffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] *= Amount;
+            }
+        }
+    }
 }
