@@ -157,6 +157,28 @@ namespace BitOrchestra
     }
 
     /// <summary>
+    /// An evaluator that subtracts one value from another.
+    /// </summary>
+    public sealed class SubtractEvaluator : BinaryEvaluator
+    {
+        public SubtractEvaluator(int BufferSize, Evaluator Left, Evaluator Right)
+            : base(BufferSize, Left, Right)
+        {
+
+        }
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            this.Left.Generate(Start, Buffer);
+            this.Right.Generate(Start, this.TempBuffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] -= this.TempBuffer[t];
+            }
+        }
+    }
+
+    /// <summary>
     /// An evaluator that multiplies two values together.
     /// </summary>
     public sealed class MultiplyEvaluator : BinaryEvaluator
@@ -179,7 +201,7 @@ namespace BitOrchestra
     }
 
     /// <summary>
-    /// An evaluator that multiplies a constant value to a source evaluator.
+    /// An evaluator that multiplies a constant value with a source evaluator.
     /// </summary>
     public sealed class MultiplyConstantEvaluator : UnaryEvaluator
     {
@@ -200,6 +222,280 @@ namespace BitOrchestra
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] *= Amount;
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that divides one value by another.
+    /// </summary>
+    public sealed class DivideEvaluator : BinaryEvaluator
+    {
+        public DivideEvaluator(int BufferSize, Evaluator Left, Evaluator Right)
+            : base(BufferSize, Left, Right)
+        {
+
+        }
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+
+            this.Left.Generate(Start, Buffer);
+            this.Right.Generate(Start, this.TempBuffer);
+            unchecked
+            {
+                for (int t = 0; t < Buffer.Length; t++)
+                {
+                    Buffer[t] /= this.TempBuffer[t];
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that divides a source evaluator by a constant value.
+    /// </summary>
+    public sealed class DivideConstantEvaluator : UnaryEvaluator
+    {
+        public DivideConstantEvaluator(Evaluator Source, int Amount)
+            : base(Source)
+        {
+            this.Amount = Amount;
+        }
+
+        /// <summary>
+        /// The amount that the source is divided by.
+        /// </summary>
+        public readonly int Amount;
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+
+            this.Source.Generate(Start, Buffer);
+            unchecked
+            {
+                for (int t = 0; t < Buffer.Length; t++)
+                {
+                    Buffer[t] /= Amount;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that finds the remainder of one value divided by another.
+    /// </summary>
+    public sealed class ModulusEvaluator : BinaryEvaluator
+    {
+        public ModulusEvaluator(int BufferSize, Evaluator Left, Evaluator Right)
+            : base(BufferSize, Left, Right)
+        {
+
+        }
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+
+            this.Left.Generate(Start, Buffer);
+            this.Right.Generate(Start, this.TempBuffer);
+            unchecked
+            {
+                for (int t = 0; t < Buffer.Length; t++)
+                {
+                    Buffer[t] %= this.TempBuffer[t];
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that finds the remainder of one value divided by a constant.
+    /// </summary>
+    public sealed class ModulusConstantEvaluator : UnaryEvaluator
+    {
+        public ModulusConstantEvaluator(Evaluator Source, int Amount)
+            : base(Source)
+        {
+            this.Amount = Amount;
+        }
+
+        /// <summary>
+        /// The base of the modulus operation.
+        /// </summary>
+        public readonly int Amount;
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+
+            this.Source.Generate(Start, Buffer);
+            unchecked
+            {
+                for (int t = 0; t < Buffer.Length; t++)
+                {
+                    Buffer[t] %= Amount;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that finds the bitwise or of two values.
+    /// </summary>
+    public sealed class OrEvaluator : BinaryEvaluator
+    {
+        public OrEvaluator(int BufferSize, Evaluator Left, Evaluator Right)
+            : base(BufferSize, Left, Right)
+        {
+
+        }
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            this.Left.Generate(Start, Buffer);
+            this.Right.Generate(Start, this.TempBuffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] |= this.TempBuffer[t];
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that finds the bitwise and of two values.
+    /// </summary>
+    public sealed class AndEvaluator : BinaryEvaluator
+    {
+        public AndEvaluator(int BufferSize, Evaluator Left, Evaluator Right)
+            : base(BufferSize, Left, Right)
+        {
+
+        }
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            this.Left.Generate(Start, Buffer);
+            this.Right.Generate(Start, this.TempBuffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] &= this.TempBuffer[t];
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that finds the bitwise xor of two values.
+    /// </summary>
+    public sealed class XorEvaluator : BinaryEvaluator
+    {
+        public XorEvaluator(int BufferSize, Evaluator Left, Evaluator Right)
+            : base(BufferSize, Left, Right)
+        {
+
+        }
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            this.Left.Generate(Start, Buffer);
+            this.Right.Generate(Start, this.TempBuffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] ^= this.TempBuffer[t];
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that finds a value left-shifted by another.
+    /// </summary>
+    public sealed class LeftShiftEvaluator : BinaryEvaluator
+    {
+        public LeftShiftEvaluator(int BufferSize, Evaluator Left, Evaluator Right)
+            : base(BufferSize, Left, Right)
+        {
+
+        }
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            this.Left.Generate(Start, Buffer);
+            this.Right.Generate(Start, this.TempBuffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] <<= this.TempBuffer[t];
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that finds a value left-shifted by a constant.
+    /// </summary>
+    public sealed class LeftShiftConstantEvaluator : UnaryEvaluator
+    {
+        public LeftShiftConstantEvaluator(Evaluator Source, int Amount)
+            : base(Source)
+        {
+            this.Amount = Amount;
+        }
+
+        /// <summary>
+        /// The amount to left-shift by.
+        /// </summary>
+        public readonly int Amount;
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            this.Source.Generate(Start, Buffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] <<= Amount;
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that finds a value right-shifted by another.
+    /// </summary>
+    public sealed class RightShiftEvaluator : BinaryEvaluator
+    {
+        public RightShiftEvaluator(int BufferSize, Evaluator Left, Evaluator Right)
+            : base(BufferSize, Left, Right)
+        {
+
+        }
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            this.Left.Generate(Start, Buffer);
+            this.Right.Generate(Start, this.TempBuffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] >>= this.TempBuffer[t];
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that finds a value right-shifted by a constant.
+    /// </summary>
+    public sealed class RightShiftConstantEvaluator : UnaryEvaluator
+    {
+        public RightShiftConstantEvaluator(Evaluator Source, int Amount)
+            : base(Source)
+        {
+            this.Amount = Amount;
+        }
+
+        /// <summary>
+        /// The amount to right-shift by.
+        /// </summary>
+        public readonly int Amount;
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            this.Source.Generate(Start, Buffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] >>= Amount;
             }
         }
     }

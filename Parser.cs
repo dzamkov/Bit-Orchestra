@@ -20,6 +20,30 @@ namespace BitOrchestra
 
             int index = 0;
             AcceptExtendedWhitespace(Text, ref index);
+
+            // Parse options
+            string optname = null;
+            int optvalue = 0;
+            while (AcceptOption(Text, ref index, ref optname, ref optvalue, out ErrorIndex))
+            {
+                switch (optname)
+                {
+                    case "rate":
+                        Options.Rate = optvalue;
+                        break;
+                    case "offset":
+                        Options.Offset = optvalue;
+                        break;
+                    case "length":
+                        Options.Length = optvalue;
+                        break;
+                    default:
+                        break;
+                }
+
+                AcceptExtendedWhitespace(Text, ref index);
+            }
+            
             if (AcceptExpression(Text, ref index, ref Expression, out ErrorIndex))
             {
                 ErrorIndex = index;
@@ -75,6 +99,31 @@ namespace BitOrchestra
                 break;
             }
             return found;
+        }
+
+        /// <summary>
+        /// Tries parsing an option.
+        /// </summary>
+        public static bool AcceptOption(string Text, ref int Index, ref string Name, ref int Value, out int ErrorIndex)
+        {
+            ErrorIndex = Index;
+            int cur = Index;
+
+            if (AcceptString("#", Text, ref cur))
+            {
+                ErrorIndex = Index;
+                if (AcceptWord(Text, ref cur, ref Name))
+                {
+                    AcceptWhitespace(Text, ref cur);
+                    if (AcceptInteger(Text, ref cur, ref Value, out ErrorIndex))
+                    {
+                        Index = cur;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -312,9 +361,9 @@ namespace BitOrchestra
         }
 
         /// <summary>
-        /// Tries parsing a literal term in the given text.
+        /// Tries parsing an integer value given in binary, decimal or hexadecimal.
         /// </summary>
-        public static bool AcceptLiteral(string Text, ref int Index, ref Expression Term, out int ErrorIndex)
+        public static bool AcceptInteger(string Text, ref int Index, ref int Value, out int ErrorIndex)
         {
             ErrorIndex = Index;
             int cur = Index;
@@ -364,19 +413,31 @@ namespace BitOrchestra
 
             if (found)
             {
-                int val = 0;
+                Value = 0;
                 int r = 1;
                 for (int t = digs.Count - 1; t >= 0; t--)
                 {
-                    val += digs[t] * r;
+                    Value += digs[t] * r;
                     r *= b;
                 }
 
-                Term = new ConstantExpression(val);
                 Index = cur;
                 return true;
             }
-            
+            return false;
+        }
+
+        /// <summary>
+        /// Tries parsing a literal term in the given text.
+        /// </summary>
+        public static bool AcceptLiteral(string Text, ref int Index, ref Expression Term, out int ErrorIndex)
+        {
+            int val = 0;
+            if (AcceptInteger(Text, ref Index, ref val, out ErrorIndex))
+            {
+                Term = new ConstantExpression(val);
+                return true;
+            }
             return false;
         }
 
@@ -460,16 +521,16 @@ namespace BitOrchestra
 
         static Operator()
         {
-            Add(new Operator("+", 0, BinaryOperation.Add));
-            Add(new Operator("-", 0, BinaryOperation.Subtract));
-            Add(new Operator("*", 1, BinaryOperation.Multiply));
-            Add(new Operator("/", 1, BinaryOperation.Divide));
-            Add(new Operator("%", 1, BinaryOperation.Modulus));
+            Add(new Operator("|", 0, BinaryOperation.Or));
+            Add(new Operator("^", 1, BinaryOperation.Xor));
             Add(new Operator("&", 2, BinaryOperation.And));
-            Add(new Operator("|", 3, BinaryOperation.Or));
-            Add(new Operator("^", 4, BinaryOperation.Xor));
-            Add(new Operator("<<", 5, BinaryOperation.LeftShift));
-            Add(new Operator(">>", 5, BinaryOperation.RightShift));
+            Add(new Operator("<<", 3, BinaryOperation.LeftShift));
+            Add(new Operator(">>", 3, BinaryOperation.RightShift));
+            Add(new Operator("+", 4, BinaryOperation.Add));
+            Add(new Operator("-", 4, BinaryOperation.Subtract));
+            Add(new Operator("*", 4, BinaryOperation.Multiply));
+            Add(new Operator("/", 5, BinaryOperation.Divide));
+            Add(new Operator("%", 5, BinaryOperation.Modulus));
         }
 
         /// <summary>

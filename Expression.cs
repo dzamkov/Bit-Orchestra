@@ -119,6 +119,16 @@ namespace BitOrchestra
                     if (constright)
                         return new AddConstantEvaluator(lefteval, rightval);
                     return new AddEvaluator(BufferSize, lefteval, righteval);
+
+                case BinaryOperation.Subtract:
+                    if (constleft && constright)
+                        return new ConstantEvaluator(leftval - rightval);
+                    if (constleft)
+                        return new AddConstantEvaluator(righteval, -leftval);
+                    if (constright)
+                        return new AddConstantEvaluator(lefteval, -rightval);
+                    return new SubtractEvaluator(BufferSize, lefteval, righteval);
+
                 case BinaryOperation.Multiply:
                     if (constleft && constright)
                         return new ConstantEvaluator(leftval * rightval);
@@ -127,6 +137,70 @@ namespace BitOrchestra
                     if (constright)
                         return new MultiplyConstantEvaluator(lefteval, rightval);
                     return new MultiplyEvaluator(BufferSize, lefteval, righteval);
+
+                case BinaryOperation.Divide:
+                    if (constleft && constright)
+                        return new ConstantEvaluator(leftval / rightval);
+                    if (constleft)
+                        return new DivideEvaluator(BufferSize, lefteval, righteval);
+                    if (constright)
+                        return new DivideConstantEvaluator(lefteval, rightval);
+                    return new DivideEvaluator(BufferSize, lefteval, righteval);
+
+                case BinaryOperation.Modulus:
+                    if (constleft && constright)
+                        return new ConstantEvaluator(leftval % rightval);
+                    if (constleft)
+                        return new ModulusEvaluator(BufferSize, lefteval, righteval);
+                    if (constright)
+                        return new ModulusConstantEvaluator(lefteval, rightval);
+                    return new ModulusEvaluator(BufferSize, lefteval, righteval);
+
+                case BinaryOperation.Or:
+                    if (constleft && constright)
+                        return new ConstantEvaluator(leftval | rightval);
+                    if (constleft)
+                        return new OrEvaluator(BufferSize, lefteval, righteval);
+                    if (constright)
+                        return new OrEvaluator(BufferSize, lefteval, righteval);
+                    return new OrEvaluator(BufferSize, lefteval, righteval);
+                    
+                case BinaryOperation.And:
+                    if (constleft && constright)
+                        return new ConstantEvaluator(leftval & rightval);
+                    if (constleft)
+                        return new AndEvaluator(BufferSize, lefteval, righteval);
+                    if (constright)
+                        return new AndEvaluator(BufferSize, lefteval, righteval);
+                    return new AndEvaluator(BufferSize, lefteval, righteval);
+
+                case BinaryOperation.Xor:
+                    if (constleft && constright)
+                        return new ConstantEvaluator(leftval ^ rightval);
+                    if (constleft)
+                        return new XorEvaluator(BufferSize, lefteval, righteval);
+                    if (constright)
+                        return new XorEvaluator(BufferSize, lefteval, righteval);
+                    return new XorEvaluator(BufferSize, lefteval, righteval);
+
+                case BinaryOperation.LeftShift:
+                    if (constleft && constright)
+                        return new ConstantEvaluator(leftval << rightval);
+                    if (constleft)
+                        return new LeftShiftEvaluator(BufferSize, lefteval, righteval);
+                    if (constright)
+                        return new LeftShiftConstantEvaluator(lefteval, rightval);
+                    return new LeftShiftEvaluator(BufferSize, lefteval, righteval);
+
+                case BinaryOperation.RightShift:
+                    if (constleft && constright)
+                        return new ConstantEvaluator(leftval >> rightval);
+                    if (constleft)
+                        return new RightShiftEvaluator(BufferSize, lefteval, righteval);
+                    if (constright)
+                        return new RightShiftConstantEvaluator(lefteval, rightval);
+                    return new RightShiftEvaluator(BufferSize, lefteval, righteval);
+
                 default:
                     throw new NotImplementedException();
             }

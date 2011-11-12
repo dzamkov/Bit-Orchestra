@@ -16,12 +16,17 @@ namespace BitOrchestra
         /// <summary>
         /// The sample rate to play at.
         /// </summary>
-        public int Rate = 44100;
+        public int Rate = 8000;
 
         /// <summary>
         /// The parameter value to start playing at.
         /// </summary>
         public int Offset = 0;
+
+        /// <summary>
+        /// The length of the sound in samples, used for exporting.
+        /// </summary>
+        public int Length = 0;
     }
 
     /// <summary>
@@ -46,20 +51,33 @@ namespace BitOrchestra
         }
 
         /// <summary>
-        /// Plays sound from the given evaluator.
+        /// Tries playing the sound from the given evaluator.
         /// </summary>
-        public void Play(int BufferSize, Evaluator Evaluator, SoundOptions Options)
+        public bool Play(int BufferSize, Evaluator Evaluator, SoundOptions Options)
         {
-            this._Player.Init(this._Stream = new _EvaluatorStream(BufferSize, Evaluator, Options.Rate, Options.Offset));
-            this._Player.Play();
+            try
+            {
+                this._Player.Init(this._Stream = new _EvaluatorStream(BufferSize, Evaluator, Options.Rate, Options.Offset));
+                this._Player.Play();
+                return true;
+            }
+            catch
+            {
+                if (this._Stream != null)
+                {
+                    this._Stream.Stop();
+                    this._Stream.Dispose();
+                }
+                return false;
+            }
         }
 
         /// <summary>
         /// Plays sound based on the given expression.
         /// </summary>
-        public void Play(int BufferSize, Expression Expression, SoundOptions Options)
+        public bool Play(int BufferSize, Expression Expression, SoundOptions Options)
         {
-            this.Play(BufferSize, Expression.GetEvaluator(BufferSize), Options);
+            return this.Play(BufferSize, Expression.GetEvaluator(BufferSize), Options);
         }
 
         /// <summary>
@@ -174,6 +192,7 @@ namespace BitOrchestra
             private int[] _Buffer;
             private int _Offset;
             private int _Parameter;
+            private int _Length;
         }
 
         private IWavePlayer _Player;
