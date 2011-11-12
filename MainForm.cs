@@ -124,7 +124,7 @@ namespace BitOrchestra
         {
             if (!this._Saved)
             {
-                if (MessageBox.Show("Would you like to save your current work?", MessageBoxCaption, MessageBoxButtons.YesNo) == DialogResult.Yes)
+                if (MessageBox.Show("Would you like to save your work?", MessageBoxCaption, MessageBoxButtons.YesNo) == DialogResult.Yes)
                 {
                     this._Save();
                 }

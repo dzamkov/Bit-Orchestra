@@ -131,6 +131,46 @@ namespace BitOrchestra
         /// </summary>
         public static bool AcceptComment(string Text, ref int Index, ref bool Multiline)
         {
+            if (AcceptString("//", Text, ref Index))
+            {
+                Multiline = false;
+                while (Index < Text.Length)
+                {
+                    char c = Text[Index];
+                    switch (c)
+                    {
+                        case '\r':
+                        case '\n':
+                            return true;
+                        default:
+                            Index++;
+                            continue;
+                    }
+                }
+                return true;
+            }
+
+            if (AcceptString("/*", Text, ref Index))
+            {
+                Multiline = true;
+                while (Index < Text.Length)
+                {
+                    char c = Text[Index];
+                    switch (c)
+                    {
+                        case '*':
+                            if (AcceptString("*/", Text, ref Index))
+                                return true;
+                            break;
+                        default:
+                            Index++;
+                            continue;
+                    }
+                }
+                return true;
+            }
+
+
             return false;
         }
 
