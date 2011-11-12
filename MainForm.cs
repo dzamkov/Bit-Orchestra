@@ -35,7 +35,7 @@ namespace BitOrchestra
             MenuStrip menu = new MenuStrip();
             menu.Items.Add("Save", null, this._SaveClick);
             menu.Items.Add("Load", null, this._LoadClick);
-            menu.Items.Add("Export");
+            menu.Items.Add("Export", null, this._ExportClick);
             menu.Items.Add(this._PlayStop = new ToolStripMenuItem("Play", null, this._PlayStopClick, Keys.F5));
             this._SetPlayStopState(PlayStopState.Play);
             this.Controls.Add(menu);
@@ -59,7 +59,7 @@ namespace BitOrchestra
             int errorindex;
             if (Parser.Parse(this._Text.Text, out expr, out opts, out errorindex))
             {
-                if (this._Sound.Play(4096, expr, opts))
+                if (this._Sound.Play(new EvaluatorStream(4096, expr, opts, false)))
                 {
                     this._SetPlayStopState(PlayStopState.Stop);
                 }
@@ -175,6 +175,42 @@ namespace BitOrchestra
                 this._Saved = true;
             }
         }
+        
+        /// <summary>
+        /// Opens a save file dialog for exporting as a wave file.
+        /// </summary>
+        private void _Export()
+        {
+            Expression expr;
+            SoundOptions opts;
+            int errorindex;
+            if (Parser.Parse(this._Text.Text, out expr, out opts, out errorindex))
+            {
+                if (opts.Length != 0)
+                {
+                    SaveFileDialog sfg = new SaveFileDialog();
+                    sfg.Filter = "Wave file (*.wav)|*.wav|All files (*.*)|*.*";
+                    sfg.RestoreDirectory = true;
+
+                    if (sfg.ShowDialog() == DialogResult.OK)
+                    {
+                        if (!Sound.Export(sfg.FileName, new EvaluatorStream(4096, expr, opts, true)))
+                        {
+                            MessageBox.Show("Something went wrong.", MessageBoxCaption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("The \"#length\" option must be set to export.", MessageBoxCaption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                this._Text.Select(errorindex, 0);
+                MessageBox.Show("Syntax error", MessageBoxCaption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
@@ -190,6 +226,11 @@ namespace BitOrchestra
         {
             this._CheckSaved();
             this._Load();
+        }
+
+        private void _ExportClick(object sender, EventArgs e)
+        {
+            this._Export();
         }
 
         private bool _Saved;
