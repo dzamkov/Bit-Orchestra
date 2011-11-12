@@ -1,0 +1,161 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Forms;
+
+using NAudio.Wave;
+using NAudio.CoreAudioApi;
+
+namespace BitOrchestra
+{
+    /// <summary>
+    /// Contains options for playing a sound.
+    /// </summary>
+    public class SoundOptions
+    {
+        /// <summary>
+        /// The sample rate to play at.
+        /// </summary>
+        public int Rate = 44100;
+
+        /// <summary>
+        /// The parameter value to start playing at.
+        /// </summary>
+        public int Offset = 0;
+    }
+
+    /// <summary>
+    /// An interface to a sound output for evaluators.
+    /// </summary>
+    public class Sound : IDisposable
+    {
+        public Sound()
+        {
+            this._Player = new WaveOut();
+        }
+
+        /// <summary>
+        /// Gets if this sound is currently playing.
+        /// </summary>
+        public bool IsPlaying
+        {
+            get
+            {
+                return this._Player.PlaybackState == PlaybackState.Playing;
+            }
+        }
+
+        /// <summary>
+        /// Plays sound from the given evaluator.
+        /// </summary>
+        public void Play(int BufferSize, Evaluator Evaluator, SoundOptions Options)
+        {
+            this._Player.Init(new _Stream(BufferSize, Evaluator, Options.Rate, Options.Offset));
+            this._Player.Play();
+        }
+
+        /// <summary>
+        /// Plays sound based on the given expression.
+        /// </summary>
+        public void Play(int BufferSize, Expression Expression, SoundOptions Options)
+        {
+            this.Play(BufferSize, Expression.GetEvaluator(BufferSize), Options);
+        }
+
+        /// <summary>
+        /// Stops playing this sound.
+        /// </summary>
+        public void Stop()
+        {
+            this._Player.Stop();
+        }
+
+        public void Dispose()
+        {
+            this._Player.Dispose();
+        }
+
+        private class _Stream : WaveStream
+        {
+            public _Stream(int BufferSize, Evaluator Evaluator, int Rate, int Parameter)
+            {
+                this._Rate = Rate;
+                this._Evaluator = Evaluator;
+                this._Buffer = new int[BufferSize];
+                this._Offset = BufferSize;
+                this._Parameter = Parameter;
+            }
+
+            public override WaveFormat WaveFormat
+            {
+                get
+                {
+                    return new WaveFormat(this._Rate, 8, 1);
+                }
+            }
+
+            public override long Length
+            {
+                get { throw new NotImplementedException(); }
+            }
+
+            public override long Position
+            {
+                get
+                {
+                    throw new NotImplementedException();
+                }
+                set
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                int ocount = count;
+                while (true)
+                {
+                    int sampsleft = this._Buffer.Length - this._Offset;
+                    if (count < sampsleft)
+                    {
+                        int ofs = this._Offset;
+                        for (int t = 0; t < count; t++)
+                        {
+                            buffer[offset] = (byte)this._Buffer[ofs];
+                            offset++;
+                            ofs++;
+                        }
+                        this._Offset = ofs;
+                        break;
+                    }
+                    else
+                    {
+                        int ofs = this._Offset;
+                        for (int t = 0; t < sampsleft; t++)
+                        {
+                            buffer[offset] = (byte)this._Buffer[ofs];
+                            offset++;
+                            ofs++;
+                        }
+                        count -= sampsleft;
+
+                        this._Evaluator.Generate(this._Parameter, this._Buffer);
+                        this._Parameter += this._Buffer.Length;
+                        this._Offset = 0;
+                        continue;
+                    }
+                }
+                return ocount;
+            }
+
+            private int _Rate;
+            private Evaluator _Evaluator;
+            private int[] _Buffer;
+            private int _Offset;
+            private int _Parameter;
+        }
+
+        private IWavePlayer _Player;
+    }
+}
