@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using Value = System.Int64;
-using UValue = System.UInt64;
+using Value = System.Int32;
+using UValue = System.UInt32;
 
 namespace BitOrchestra
 {
@@ -53,7 +53,7 @@ namespace BitOrchestra
         /// Generates the values of the evaluator starting at the given offset and writes them to the
         /// given buffer.
         /// </summary>
-        protected abstract void Generate(Value Start, Value[] Buffer);
+        public abstract void Generate(Value Start, Value[] Buffer);
     }
     
     /// <summary>
@@ -77,7 +77,7 @@ namespace BitOrchestra
             // Since the buffer for this evaluator never changes, nothing needs to be invalidated.
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             for (int t = 0; t < Buffer.Length; t++)
             {
@@ -97,7 +97,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             for (int t = 0; t < Buffer.Length; t++)
             {
@@ -170,7 +170,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] left = this.Left.Generate(Start);
             Value[] right = this.Right.Generate(Start);
@@ -197,7 +197,7 @@ namespace BitOrchestra
         /// </summary>
         public readonly Value Amount;
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
@@ -218,7 +218,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] left = this.Left.Generate(Start);
             Value[] right = this.Right.Generate(Start);
@@ -240,7 +240,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] left = this.Left.Generate(Start);
             Value[] right = this.Right.Generate(Start);
@@ -267,7 +267,7 @@ namespace BitOrchestra
         /// </summary>
         public readonly Value Amount;
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
@@ -288,7 +288,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] left = this.Left.Generate(Start);
             Value[] right = this.Right.Generate(Start);
@@ -315,7 +315,7 @@ namespace BitOrchestra
         /// </summary>
         public readonly Value Amount;
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
@@ -336,7 +336,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] left = this.Left.Generate(Start);
             Value[] right = this.Right.Generate(Start);
@@ -363,7 +363,7 @@ namespace BitOrchestra
         /// </summary>
         public readonly Value Amount;
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
@@ -384,7 +384,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] left = this.Left.Generate(Start);
             Value[] right = this.Right.Generate(Start);
@@ -406,7 +406,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] left = this.Left.Generate(Start);
             Value[] right = this.Right.Generate(Start);
@@ -428,7 +428,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] left = this.Left.Generate(Start);
             Value[] right = this.Right.Generate(Start);
@@ -450,7 +450,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] left = this.Left.Generate(Start);
             Value[] right = this.Right.Generate(Start);
@@ -477,7 +477,7 @@ namespace BitOrchestra
         /// </summary>
         public readonly int Amount;
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
@@ -498,7 +498,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] left = this.Left.Generate(Start);
             Value[] right = this.Right.Generate(Start);
@@ -525,12 +525,169 @@ namespace BitOrchestra
         /// </summary>
         public readonly int Amount;
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = source[t] >> this.Amount;
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that negates the source.
+    /// </summary>
+    public sealed class NegateEvaluator : UnaryEvaluator
+    {
+        public NegateEvaluator(int BufferSize, Evaluator Source)
+            : base(BufferSize, Source)
+        {
+
+        }
+
+        public override void Generate(Value Start, Value[] Buffer)
+        {
+            Value[] source = this.Source.Generate(Start);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] = -source[t];
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator that complements the source.
+    /// </summary>
+    public sealed class ComplementEvaluator : UnaryEvaluator
+    {
+        public ComplementEvaluator(int BufferSize, Evaluator Source)
+            : base(BufferSize, Source)
+        {
+
+        }
+
+        public override void Generate(Value Start, Value[] Buffer)
+        {
+            Value[] source = this.Source.Generate(Start);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                Buffer[t] = ~source[t];
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator for a generator function.
+    /// </summary>
+    public abstract class GeneratorEvaluator : UnaryEvaluator
+    {
+        public GeneratorEvaluator(int BufferSize, Evaluator Source, double Period, double Scale)
+            : base(BufferSize, Source)
+        {
+            this.Period = Period;
+            this.Scale = Scale;
+        }
+
+        /// <summary>
+        /// The length of a period for this generator.
+        /// </summary>
+        public readonly double Period;
+
+        /// <summary>
+        /// The amount the output value is scaled by.
+        /// </summary>
+        public readonly double Scale;
+    }
+
+    /// <summary>
+    /// An evaluator for a saw generator.
+    /// </summary>
+    public sealed class SawEvaluator : GeneratorEvaluator
+    {
+        public SawEvaluator(int BufferSize, Evaluator Source, double Period, double Scale)
+            : base(BufferSize, Source, Period, Scale)
+        {
+
+        }
+
+        public override void Generate(Value Start, Value[] Buffer)
+        {
+            Value[] source = this.Source.Generate(Start);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                double input = ((source[t] / this.Period) % 1.0 + 1.0) % 1.0;
+                double output = input * 2.0 - 1.0;
+                Buffer[t] = (Value)(output * Scale);
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator for a sine generator.
+    /// </summary>
+    public sealed class SineEvaluator : GeneratorEvaluator
+    {
+        public SineEvaluator(int BufferSize, Evaluator Source, double Period, double Scale)
+            : base(BufferSize, Source, Period, Scale)
+        {
+
+        }
+
+        public override void Generate(Value Start, Value[] Buffer)
+        {
+            Value[] source = this.Source.Generate(Start);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                double input = source[t] / this.Period;
+                double output = Math.Sin(input * 2.0 * Math.PI);
+                Buffer[t] = (Value)(output * Scale);
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator for a square generator.
+    /// </summary>
+    public sealed class SquareEvaluator : GeneratorEvaluator
+    {
+        public SquareEvaluator(int BufferSize, Evaluator Source, double Period, double Scale)
+            : base(BufferSize, Source, Period, Scale)
+        {
+
+        }
+
+        public override void Generate(Value Start, Value[] Buffer)
+        {
+            Value[] source = this.Source.Generate(Start);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                double input = ((source[t] / this.Period) % 1.0 + 1.0) % 1.0;
+                double output = input > 0.5 ? 1.0 : -1.0;
+                Buffer[t] = (Value)(output * Scale);
+            }
+        }
+    }
+
+    /// <summary>
+    /// An evaluator for a triangle generator.
+    /// </summary>
+    public sealed class TriangleEvaluator : GeneratorEvaluator
+    {
+        public TriangleEvaluator(int BufferSize, Evaluator Source, double Period, double Scale)
+            : base(BufferSize, Source, Period, Scale)
+        {
+
+        }
+
+        public override void Generate(Value Start, Value[] Buffer)
+        {
+            Value[] source = this.Source.Generate(Start);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                double input = ((source[t] / this.Period) % 1.0 + 1.0) % 1.0;
+                double output = input < 0.5 ? input * 4.0 - 1.0 : input * -4.0 + 3.0;
+                Buffer[t] = (Value)(output * Scale);
             }
         }
     }
@@ -557,7 +714,7 @@ namespace BitOrchestra
         /// </summary>
         public readonly Evaluator Parameter;
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] parambuf = this.Parameter.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
@@ -590,7 +747,7 @@ namespace BitOrchestra
         /// </summary>
         public readonly Evaluator Parameter;
 
-        protected override void Generate(Value Start, Value[] Buffer)
+        public override void Generate(Value Start, Value[] Buffer)
         {
             Value[] parambuf = this.Parameter.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)

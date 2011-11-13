@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
+using System.Threading;
 
 using NAudio.Wave;
 using NAudio.CoreAudioApi;
 
-using Value = System.Int64;
+using Value = System.Int32;
 
 namespace BitOrchestra
 {
@@ -28,7 +29,7 @@ namespace BitOrchestra
         /// <summary>
         /// The length of the sound in samples, used for exporting.
         /// </summary>
-        public int Length = 0;
+        public Value Length = 0;
 
         /// <summary>
         /// The amount of bits of resolution in the output of the sound.
@@ -227,7 +228,6 @@ namespace BitOrchestra
             this._SampleSize = sampsize;
             this._Shift = shift;
 
-            // Generate initial buffer
             this._Advance();
         }
 
@@ -272,17 +272,18 @@ namespace BitOrchestra
                 return 0;
             }
 
+            // Its more useful to have a sample count rather than a byte count.
+            int samplecount = (count / this._SampleSize);
+
             // If exporting, make sure only to write "Options.Length" samples
             if (this._Exporting)
-                count = Math.Min(count, this._Options.Length - this._Parameter);
+                samplecount = Math.Min(samplecount, (int)(this._Options.Length - this._Parameter));
 
             // Find sample size and shift amount
             int sampsize = this._SampleSize;
             int shift = this._Shift;
 
-            int ocount = count;
-            count /= this._SampleSize; // Its more useful to treat count as a sample count rather than a byte count.
-
+            int ocount = samplecount * sampsize;
             while (true)
             {
                 int sampsleft = this._Buffer.Length - this._Offset;
@@ -291,6 +292,12 @@ namespace BitOrchestra
                 for (int t = 0; t < toread; t++)
                 {
                     Value val = this._Buffer[ofs];
+
+                    if (this._SampleSize == 1)
+                    {
+                        // Correct byte sign
+                        val += (128 >> shift);
+                    }
 
                     if (shift == 0 && this._SampleSize == 1)
                     {
@@ -332,7 +339,7 @@ namespace BitOrchestra
         }
 
         /// <summary>
-        /// Generates the next buffer and advances the parameter.
+        /// Advances to the next generated buffer.
         /// </summary>
         private void _Advance()
         {
@@ -350,9 +357,9 @@ namespace BitOrchestra
         private bool _Exporting;
         private SoundOptions _Options;
         private Evaluator _Evaluator;
+        private Value _Parameter;
         private Value[] _Buffer;
         private int _Offset;
-        private int _Parameter;
 
         private int _SampleSize;
         private int _Shift;

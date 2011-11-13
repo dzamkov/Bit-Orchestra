@@ -550,15 +550,37 @@ namespace BitOrchestra
                 return true;
 
             int cur = Index;
-            string word = null;
+            if (AcceptString("-", Text, ref cur))
+            {
+                if (AcceptTerm(Variables, Text, ref cur, ref Term, out ErrorIndex))
+                {
+                    Term = new UnaryExpression(Term, UnaryOperation.Negate);
+                    Index = cur;
+                    return true;
+                }
+            }
 
+            if (AcceptString("~", Text, ref cur))
+            {
+                if (AcceptTerm(Variables, Text, ref cur, ref Term, out ErrorIndex))
+                {
+                    Term = new UnaryExpression(Term, UnaryOperation.Complement);
+                    Index = cur;
+                    return true;
+                }
+            }
+
+            int wordend = 0;
+            string word = null;
             if (AcceptWord(Text, ref cur, ref word))
             {
+                wordend = cur;
                 if (Variables.TryGetValue(word, out Term))
                 {
                     Index = cur;
                     return true;
                 }
+                AcceptExtendedWhitespace(Text, ref cur);
             }
 
             if (AcceptString("(", Text, ref cur))
@@ -569,6 +591,28 @@ namespace BitOrchestra
                     AcceptExtendedWhitespace(Text, ref cur);
                     if (AcceptString(")", Text, ref cur))
                     {
+                        if (word != null)
+                        {
+                            switch (word)
+                            {
+                                case "saw":
+                                    Term = new UnaryExpression(Term, UnaryOperation.Saw);
+                                    break;
+                                case "sin":
+                                    Term = new UnaryExpression(Term, UnaryOperation.Sine);
+                                    break;
+                                case "square":
+                                    Term = new UnaryExpression(Term, UnaryOperation.Square);
+                                    break;
+                                case "tri":
+                                    Term = new UnaryExpression(Term, UnaryOperation.Triangle);
+                                    break;
+                                default:
+                                    ErrorIndex = wordend;
+                                    return false;
+                            }
+                        }
+
                         Index = cur;
                         return true;
                     }
@@ -645,7 +689,7 @@ namespace BitOrchestra
         }
 
         /// <summary>
-        /// A mapping of names to operators.
+        /// A mapping of names to binary operators.
         /// </summary>
         public static readonly Dictionary<string, Operator> Map = new Dictionary<string,Operator>();
 

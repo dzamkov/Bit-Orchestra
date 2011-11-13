@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using Value = System.Int64;
+using Value = System.Int32;
 
 namespace BitOrchestra
 {
@@ -320,6 +320,104 @@ namespace BitOrchestra
         Xor,
         LeftShift,
         RightShift
+    }
+
+    /// <summary>
+    /// Performs an operation on a source expression.
+    /// </summary>
+    public sealed class UnaryExpression : Expression
+    {
+        public UnaryExpression(Expression Source, UnaryOperation Operation)
+        {
+            this.Source = Source;
+            this.Operation = Operation;
+        }
+
+        /// <summary>
+        /// The source expression for this unary expression.
+        /// </summary>
+        public readonly Expression Source;
+
+        /// <summary>
+        /// The operation performed by this expression.
+        /// </summary>
+        public readonly UnaryOperation Operation;
+
+        public override bool Equals(object obj)
+        {
+            if (this == obj)
+                return true;
+
+            UnaryExpression ue = obj as UnaryExpression;
+            return
+                ue != null &&
+                this.Operation == ue.Operation &&
+                ue.Source.Equals(this.Source);
+        }
+
+        public override int GetHashCode()
+        {
+            int hash = 0x539ACC23;
+            hash += this.Source.GetHashCode();
+            hash += (hash << 5) ^ (hash >> 5);
+            hash += this.Operation.GetHashCode();
+            hash += (hash << 3) ^ (hash >> 3);
+            return hash;
+        }
+
+        protected override Evaluator CreateEvaluator(Dictionary<Expression, Evaluator> Cache, int BufferSize, int Resolution)
+        {
+            Evaluator srceval = this.Source.GetEvaluator(Cache, BufferSize, Resolution);
+
+            bool constsrc = false;
+            Value srcval = 0;
+
+            ConstantEvaluator consteval = srceval as ConstantEvaluator;
+            if (consteval != null)
+            {
+                constsrc = true;
+                srcval = consteval.Value;
+            }
+
+            int resmag = 2 << (Resolution - 1);
+            double period = resmag;
+            double scale = (resmag - 3) * 0.5;
+
+            switch (this.Operation)
+            {
+                case UnaryOperation.Negate:
+                    if (constsrc)
+                        return new ConstantEvaluator(BufferSize, -srcval);
+                    return new NegateEvaluator(BufferSize, srceval);
+                case UnaryOperation.Complement:
+                    if (constsrc)
+                        return new ConstantEvaluator(BufferSize, ~srcval);
+                    return new ComplementEvaluator(BufferSize, srceval);
+                case UnaryOperation.Saw:
+                    return new SawEvaluator(BufferSize, srceval, period, scale);
+                case UnaryOperation.Sine:
+                    return new SineEvaluator(BufferSize, srceval, period, scale);
+                case UnaryOperation.Square:
+                    return new SquareEvaluator(BufferSize, srceval, period, scale);
+                case UnaryOperation.Triangle:
+                    return new TriangleEvaluator(BufferSize, srceval, period, scale);
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Identifies a possible unary operation.
+    /// </summary>
+    public enum UnaryOperation
+    {
+        Negate,
+        Complement,
+        Saw,
+        Sine,
+        Square,
+        Triangle,
     }
 
     /// <summary>
