@@ -251,7 +251,12 @@ namespace BitOrchestra
 
                 case BinaryOperation.Divide:
                     if (constleft && constright)
-                        return new ConstantEvaluator(leftval / rightval);
+                    {
+                        if (rightval == 0)
+                            return new ConstantEvaluator(0);
+                        else
+                            return new ConstantEvaluator(leftval / rightval);
+                    }
                     if (constleft)
                         return new DivideEvaluator(lefteval, righteval.GetBuffered(BufferSize));
                     if (constright)
@@ -260,7 +265,12 @@ namespace BitOrchestra
 
                 case BinaryOperation.Modulus:
                     if (constleft && constright)
-                        return new ConstantEvaluator(leftval % rightval);
+                    {
+                        if (rightval == 0)
+                            return new ConstantEvaluator(0);
+                        else
+                            return new ConstantEvaluator(leftval % rightval);
+                    }
                     if (constleft)
                         return new ModulusEvaluator(lefteval, righteval.GetBuffered(BufferSize));
                     if (constright)

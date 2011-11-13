@@ -346,12 +346,12 @@ namespace BitOrchestra
         {
             this.Left.Generate(Start, Buffer);
             Value[] right = this.Right.Generate(Start);
-            unchecked
+            for (int t = 0; t < Buffer.Length; t++)
             {
-                for (int t = 0; t < Buffer.Length; t++)
-                {
+                if (right[t] == 0)
+                    Buffer[t] = 0;
+                else
                     Buffer[t] /= right[t];
-                }
             }
         }
     }
@@ -375,12 +375,9 @@ namespace BitOrchestra
         public override void Generate(Value Start, Value[] Buffer)
         {
             this.Source.Generate(Start, Buffer);
-            unchecked
+            for (int t = 0; t < Buffer.Length; t++)
             {
-                for (int t = 0; t < Buffer.Length; t++)
-                {
-                    Buffer[t] /= this.Amount;
-                }
+                Buffer[t] /= this.Amount;
             }
         }
     }
@@ -404,7 +401,10 @@ namespace BitOrchestra
             {
                 for (int t = 0; t < Buffer.Length; t++)
                 {
-                    Buffer[t] %= right[t];
+                    if (right[t] == 0)
+                        Buffer[t] = 0;
+                    else
+                        Buffer[t] %= right[t];
                 }
             }
         }
@@ -429,12 +429,9 @@ namespace BitOrchestra
         public override void Generate(Value Start, Value[] Buffer)
         {
             this.Source.Generate(Start, Buffer);
-            unchecked
+            for (int t = 0; t < Buffer.Length; t++)
             {
-                for (int t = 0; t < Buffer.Length; t++)
-                {
-                    Buffer[t] %= this.Amount;
-                }
+                Buffer[t] %= this.Amount;
             }
         }
     }
