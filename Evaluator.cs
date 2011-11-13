@@ -2,8 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using Value = System.Int64;
+using UValue = System.UInt64;
+
 namespace BitOrchestra
 {
+
     /// <summary>
     /// An evaluator for an expression that operates on a fixed buffer size.
     /// </summary>
@@ -11,13 +15,13 @@ namespace BitOrchestra
     {
         public Evaluator(int BufferSize)
         {
-            this.Buffer = new int[BufferSize];
+            this.Buffer = new Value[BufferSize];
         }
 
         /// <summary>
         /// The buffer for this evaluator.
         /// </summary>
-        public readonly int[] Buffer;
+        public readonly Value[] Buffer;
 
         /// <summary>
         /// Indicates wether the buffer for the evaluator is ready for the current parameter.
@@ -27,7 +31,7 @@ namespace BitOrchestra
         /// <summary>
         /// Gets a buffer containing the values of this evaluator starting at the given offset.
         /// </summary>
-        public int[] Generate(int Start)
+        public Value[] Generate(Value Start)
         {
             if (!this.Ready)
             {
@@ -49,7 +53,7 @@ namespace BitOrchestra
         /// Generates the values of the evaluator starting at the given offset and writes them to the
         /// given buffer.
         /// </summary>
-        protected abstract void Generate(int Start, int[] Buffer);
+        protected abstract void Generate(Value Start, Value[] Buffer);
     }
     
     /// <summary>
@@ -57,7 +61,7 @@ namespace BitOrchestra
     /// </summary>
     public sealed class ConstantEvaluator : Evaluator
     {
-        public ConstantEvaluator(int BufferSize, int Value)
+        public ConstantEvaluator(int BufferSize, Value Value)
             : base(BufferSize)
         {
             this.Value = Value;
@@ -66,14 +70,14 @@ namespace BitOrchestra
         /// <summary>
         /// The value of the evaluator.
         /// </summary>
-        public readonly int Value;
+        public readonly Value Value;
 
         public override void Invalidate()
         {
             // Since the buffer for this evaluator never changes, nothing needs to be invalidated.
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
             for (int t = 0; t < Buffer.Length; t++)
             {
@@ -93,7 +97,7 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
             for (int t = 0; t < Buffer.Length; t++)
             {
@@ -166,10 +170,10 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] left = this.Left.Generate(Start);
-            int[] right = this.Right.Generate(Start);
+            Value[] left = this.Left.Generate(Start);
+            Value[] right = this.Right.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = left[t] + right[t];
@@ -182,7 +186,7 @@ namespace BitOrchestra
     /// </summary>
     public sealed class AddConstantEvaluator : UnaryEvaluator
     {
-        public AddConstantEvaluator(int BufferSize, Evaluator Source, int Amount)
+        public AddConstantEvaluator(int BufferSize, Evaluator Source, Value Amount)
             : base(BufferSize, Source)
         {
             this.Amount = Amount;
@@ -191,11 +195,11 @@ namespace BitOrchestra
         /// <summary>
         /// The amount that is added to the source.
         /// </summary>
-        public readonly int Amount;
+        public readonly Value Amount;
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] source = this.Source.Generate(Start);
+            Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = source[t] + this.Amount;
@@ -214,10 +218,10 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] left = this.Left.Generate(Start);
-            int[] right = this.Right.Generate(Start);
+            Value[] left = this.Left.Generate(Start);
+            Value[] right = this.Right.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = left[t] - right[t];
@@ -236,10 +240,10 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] left = this.Left.Generate(Start);
-            int[] right = this.Right.Generate(Start);
+            Value[] left = this.Left.Generate(Start);
+            Value[] right = this.Right.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = left[t] * right[t];
@@ -252,7 +256,7 @@ namespace BitOrchestra
     /// </summary>
     public sealed class MultiplyConstantEvaluator : UnaryEvaluator
     {
-        public MultiplyConstantEvaluator(int BufferSize, Evaluator Source, int Amount)
+        public MultiplyConstantEvaluator(int BufferSize, Evaluator Source, Value Amount)
             : base(BufferSize, Source)
         {
             this.Amount = Amount;
@@ -261,11 +265,11 @@ namespace BitOrchestra
         /// <summary>
         /// The amount that the source is multiplied by.
         /// </summary>
-        public readonly int Amount;
+        public readonly Value Amount;
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] source = this.Source.Generate(Start);
+            Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = source[t] * this.Amount;
@@ -284,10 +288,10 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] left = this.Left.Generate(Start);
-            int[] right = this.Right.Generate(Start);
+            Value[] left = this.Left.Generate(Start);
+            Value[] right = this.Right.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = unchecked(left[t] / right[t]);
@@ -300,7 +304,7 @@ namespace BitOrchestra
     /// </summary>
     public sealed class DivideConstantEvaluator : UnaryEvaluator
     {
-        public DivideConstantEvaluator(int BufferSize, Evaluator Source, int Amount)
+        public DivideConstantEvaluator(int BufferSize, Evaluator Source, Value Amount)
             : base(BufferSize, Source)
         {
             this.Amount = Amount;
@@ -309,11 +313,11 @@ namespace BitOrchestra
         /// <summary>
         /// The amount that the source is divided by.
         /// </summary>
-        public readonly int Amount;
+        public readonly Value Amount;
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] source = this.Source.Generate(Start);
+            Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = unchecked(source[t] / this.Amount);
@@ -332,10 +336,10 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] left = this.Left.Generate(Start);
-            int[] right = this.Right.Generate(Start);
+            Value[] left = this.Left.Generate(Start);
+            Value[] right = this.Right.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = unchecked(left[t] % right[t]);
@@ -348,7 +352,7 @@ namespace BitOrchestra
     /// </summary>
     public sealed class ModulusConstantEvaluator : UnaryEvaluator
     {
-        public ModulusConstantEvaluator(int BufferSize, Evaluator Source, int Amount)
+        public ModulusConstantEvaluator(int BufferSize, Evaluator Source, Value Amount)
             : base(BufferSize, Source)
         {
             this.Amount = Amount;
@@ -357,11 +361,11 @@ namespace BitOrchestra
         /// <summary>
         /// The base of the modulus operation.
         /// </summary>
-        public readonly int Amount;
+        public readonly Value Amount;
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] source = this.Source.Generate(Start);
+            Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = unchecked(source[t] % this.Amount);
@@ -380,10 +384,10 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] left = this.Left.Generate(Start);
-            int[] right = this.Right.Generate(Start);
+            Value[] left = this.Left.Generate(Start);
+            Value[] right = this.Right.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = left[t] | right[t];
@@ -402,10 +406,10 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] left = this.Left.Generate(Start);
-            int[] right = this.Right.Generate(Start);
+            Value[] left = this.Left.Generate(Start);
+            Value[] right = this.Right.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = left[t] & right[t];
@@ -424,10 +428,10 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] left = this.Left.Generate(Start);
-            int[] right = this.Right.Generate(Start);
+            Value[] left = this.Left.Generate(Start);
+            Value[] right = this.Right.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = left[t] ^ right[t];
@@ -446,13 +450,13 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] left = this.Left.Generate(Start);
-            int[] right = this.Right.Generate(Start);
+            Value[] left = this.Left.Generate(Start);
+            Value[] right = this.Right.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
-                Buffer[t] = left[t] << right[t];
+                Buffer[t] = left[t] << (int)right[t];
             }
         }
     }
@@ -473,9 +477,9 @@ namespace BitOrchestra
         /// </summary>
         public readonly int Amount;
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] source = this.Source.Generate(Start);
+            Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = source[t] << this.Amount;
@@ -494,13 +498,13 @@ namespace BitOrchestra
 
         }
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] left = this.Left.Generate(Start);
-            int[] right = this.Right.Generate(Start);
+            Value[] left = this.Left.Generate(Start);
+            Value[] right = this.Right.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
-                Buffer[t] = left[t] >> right[t];
+                Buffer[t] = left[t] >> (int)right[t];
             }
         }
     }
@@ -521,9 +525,9 @@ namespace BitOrchestra
         /// </summary>
         public readonly int Amount;
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] source = this.Source.Generate(Start);
+            Value[] source = this.Source.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
                 Buffer[t] = source[t] >> this.Amount;
@@ -553,12 +557,12 @@ namespace BitOrchestra
         /// </summary>
         public readonly Evaluator Parameter;
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] parambuf = this.Parameter.Generate(Start);
+            Value[] parambuf = this.Parameter.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
-                uint param = (uint)parambuf[t] % (uint)this.Items.Length;
+                uint param = (uint)((UValue)parambuf[t] % (UValue)this.Items.Length);
                 Buffer[t] = this.Items[param].Generate(Start)[t];
             }
         }
@@ -569,7 +573,7 @@ namespace BitOrchestra
     /// </summary>
     public sealed class SequencerConstantEvaluator : Evaluator
     {
-        public SequencerConstantEvaluator(int BufferSize, int[] Items, Evaluator Parameter)
+        public SequencerConstantEvaluator(int BufferSize, Value[] Items, Evaluator Parameter)
             : base(BufferSize)
         {
             this.Items = Items;
@@ -579,19 +583,19 @@ namespace BitOrchestra
         /// <summary>
         /// The items of the sequence.
         /// </summary>
-        public readonly int[] Items;
+        public readonly Value[] Items;
 
         /// <summary>
         /// The evaluator for the parameter of the sequence.
         /// </summary>
         public readonly Evaluator Parameter;
 
-        protected override void Generate(int Start, int[] Buffer)
+        protected override void Generate(Value Start, Value[] Buffer)
         {
-            int[] parambuf = this.Parameter.Generate(Start);
+            Value[] parambuf = this.Parameter.Generate(Start);
             for (int t = 0; t < Buffer.Length; t++)
             {
-                uint param = (uint)parambuf[t] % (uint)this.Items.Length;
+                uint param = (uint)((UValue)parambuf[t] % (UValue)this.Items.Length);
                 Buffer[t] = this.Items[param];
             }
         }

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using Value = System.Int64;
+
 namespace BitOrchestra
 {
     /// <summary>
@@ -34,7 +36,7 @@ namespace BitOrchestra
     /// </summary>
     public sealed class ConstantExpression : Expression
     {
-        public ConstantExpression(int Value)
+        public ConstantExpression(Value Value)
         {
             this.Value = Value;
         }
@@ -42,7 +44,7 @@ namespace BitOrchestra
         /// <summary>
         /// The value of this expression.
         /// </summary>
-        public readonly int Value;
+        public readonly Value Value;
 
         public override bool Equals(object obj)
         {
@@ -186,10 +188,10 @@ namespace BitOrchestra
             Evaluator righteval = this.Right.GetEvaluator(Cache, BufferSize, Resolution);
 
             bool constleft = false;
-            int leftval = 0;
+            Value leftval = 0;
 
             bool constright = false;
-            int rightval = 0;
+            Value rightval = 0;
 
             ConstantEvaluator consteval = lefteval as ConstantEvaluator;
             if (consteval != null)
@@ -281,20 +283,20 @@ namespace BitOrchestra
 
                 case BinaryOperation.LeftShift:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval << rightval);
+                        return new ConstantEvaluator(BufferSize, leftval << (int)rightval);
                     if (constleft)
                         return new LeftShiftEvaluator(BufferSize, lefteval, righteval);
                     if (constright)
-                        return new LeftShiftConstantEvaluator(BufferSize, lefteval, rightval);
+                        return new LeftShiftConstantEvaluator(BufferSize, lefteval, (int)rightval);
                     return new LeftShiftEvaluator(BufferSize, lefteval, righteval);
 
                 case BinaryOperation.RightShift:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval >> rightval);
+                        return new ConstantEvaluator(BufferSize, leftval >> (int)rightval);
                     if (constleft)
                         return new RightShiftEvaluator(BufferSize, lefteval, righteval);
                     if (constright)
-                        return new RightShiftConstantEvaluator(BufferSize, lefteval, rightval);
+                        return new RightShiftConstantEvaluator(BufferSize, lefteval, (int)rightval);
                     return new RightShiftEvaluator(BufferSize, lefteval, righteval);
 
                 default:
@@ -387,7 +389,7 @@ namespace BitOrchestra
             }
 
             Evaluator[] items = new Evaluator[this.Items.Count];
-            int[] constitems = new int[this.Items.Count];
+            Value[] constitems = new Value[this.Items.Count];
             bool constseq = true;
             for (int t = 0; t < items.Length; t++)
             {

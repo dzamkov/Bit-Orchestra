@@ -6,6 +6,8 @@ using System.Windows.Forms;
 using NAudio.Wave;
 using NAudio.CoreAudioApi;
 
+using Value = System.Int64;
+
 namespace BitOrchestra
 {
     /// <summary>
@@ -288,7 +290,7 @@ namespace BitOrchestra
                 int ofs = this._Offset;
                 for (int t = 0; t < toread; t++)
                 {
-                    int val = this._Buffer[ofs];
+                    Value val = this._Buffer[ofs];
 
                     if (shift == 0 && this._SampleSize == 1)
                     {
@@ -348,7 +350,7 @@ namespace BitOrchestra
         private bool _Exporting;
         private SoundOptions _Options;
         private Evaluator _Evaluator;
-        private int[] _Buffer;
+        private Value[] _Buffer;
         private int _Offset;
         private int _Parameter;
 
