@@ -287,7 +287,7 @@ namespace BitOrchestra
             while (true)
             {
                 int sampsleft = this._Buffer.Length - this._Offset;
-                int toread = Math.Min(count, sampsleft);
+                int toread = Math.Min(samplecount, sampsleft);
                 int ofs = this._Offset;
                 for (int t = 0; t < toread; t++)
                 {
@@ -323,16 +323,16 @@ namespace BitOrchestra
                     ofs++;
                 }
                 this._Offset = ofs;
-                count -= toread;
+                samplecount -= toread;
 
-                if (count < sampsleft)
-                {
-                    break;
-                }
-                else
+                if (this._Offset >= this._Buffer.Length)
                 {
                     this._Advance();
                     continue;
+                }
+                else
+                {
+                    break;
                 }
             }
             return ocount;
