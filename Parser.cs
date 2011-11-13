@@ -48,7 +48,7 @@ namespace BitOrchestra
             {
                 ErrorIndex = index;
                 AcceptExtendedWhitespace(Text, ref index);
-                if (ErrorIndex == Text.Length)
+                if (index == Text.Length)
                 {
                     return true;
                 }
@@ -78,7 +78,22 @@ namespace BitOrchestra
         /// </summary>
         public static bool AcceptNewline(string Text, ref int Index)
         {
-            return AcceptString("\r\n", Text, ref Index);
+            bool found = false;
+            while(Index < Text.Length)
+            {
+                char c = Text[Index];
+                switch (c)
+                {
+                    case '\r':
+                    case '\n':
+                        found = true;
+                        Index++;
+                        continue;
+                    default:
+                        return found;
+                }
+            }
+            return found;
         }
 
         /// <summary>

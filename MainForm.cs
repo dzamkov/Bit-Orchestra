@@ -21,6 +21,15 @@ namespace BitOrchestra
             this._Sound = new Sound();
             this._Saved = true;
 
+            try
+            {
+                this.Icon = Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            }
+            catch
+            {
+
+            }
+
             // Text area
             TextBox text = new TextBox();
             text.Dock = DockStyle.Fill;
@@ -33,9 +42,9 @@ namespace BitOrchestra
 
             // Menu
             MenuStrip menu = new MenuStrip();
-            menu.Items.Add("Save", null, this._SaveClick);
-            menu.Items.Add("Load", null, this._LoadClick);
-            menu.Items.Add("Export", null, this._ExportClick);
+            menu.Items.Add(new ToolStripMenuItem("Save", null, this._SaveClick, Keys.Control | Keys.S));
+            menu.Items.Add(new ToolStripMenuItem("Load", null, this._LoadClick, Keys.Control | Keys.L));
+            menu.Items.Add(new ToolStripMenuItem("Export", null, this._ExportClick, Keys.Control | Keys.E));
             menu.Items.Add(this._PlayStop = new ToolStripMenuItem("Play", null, this._PlayStopClick, Keys.F5));
             this._SetPlayStopState(PlayStopState.Play);
             this.Controls.Add(menu);
