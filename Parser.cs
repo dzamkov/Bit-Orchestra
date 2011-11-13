@@ -568,7 +568,7 @@ namespace BitOrchestra
             Add(new Operator(">>", 3, BinaryOperation.RightShift));
             Add(new Operator("+", 4, BinaryOperation.Add));
             Add(new Operator("-", 4, BinaryOperation.Subtract));
-            Add(new Operator("*", 4, BinaryOperation.Multiply));
+            Add(new Operator("*", 5, BinaryOperation.Multiply));
             Add(new Operator("/", 5, BinaryOperation.Divide));
             Add(new Operator("%", 5, BinaryOperation.Modulus));
         }
