@@ -215,6 +215,7 @@ namespace BitOrchestra
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             this._CheckSaved();
+            this._Sound.Dispose();
         }
 
         private void _SaveClick(object sender, EventArgs e)

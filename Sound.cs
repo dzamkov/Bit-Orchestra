@@ -36,10 +36,88 @@ namespace BitOrchestra
     {
         public Sound()
         {
-            this._Player = new WaveOut();
+
         }
 
-       
+        /// <summary>
+        /// Tries creating a waveout interface.
+        /// </summary>
+        private static bool _CreateWaveout(out IWavePlayer Player)
+        {
+            try
+            {
+                Player = new WaveOut();
+                return true;
+            }
+            catch
+            {
+                Player = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Tries creating a wasapi interface.
+        /// </summary>
+        private static bool _CreateWasapi(out IWavePlayer Player)
+        {
+            try
+            {
+                Player = new WasapiOut(AudioClientShareMode.Shared, 300);
+                return true;
+            }
+            catch
+            {
+                Player = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Tries creating a directsound interface.
+        /// </summary>
+        private static bool _CreateDirectSound(out IWavePlayer Player)
+        {
+            try
+            {
+                Player = new DirectSoundOut();
+                return true;
+            }
+            catch
+            {
+                Player = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Tries creating an asio interface.
+        /// </summary>
+        private static bool _CreateAsio(out IWavePlayer Player)
+        {
+            try
+            {
+                Player = new AsioOut();
+                return true;
+            }
+            catch
+            {
+                Player = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Tries creating a wave player of some sort.
+        /// </summary>
+        private static bool _Create(out IWavePlayer Player)
+        {
+            return
+                _CreateWasapi(out Player) ||
+                _CreateWaveout(out Player) ||
+                _CreateDirectSound(out Player) ||
+                _CreateAsio(out Player);
+        }
 
         /// <summary>
         /// Gets if this sound is currently playing.
@@ -59,9 +137,16 @@ namespace BitOrchestra
         {
             try
             {
-                this._Player.Init(this._Stream = Stream);
-                this._Player.Play();
-                return true;
+                if (this._Player == null)
+                {
+                    if (_Create(out this._Player))
+                    {
+                        this._Player.Init(this._Stream = Stream);
+                        this._Player.Play();
+                        return true;
+                    }
+                }
+                return false;
             }
             catch
             {
@@ -69,7 +154,6 @@ namespace BitOrchestra
                 return false;
             }
         }
-
 
         /// <summary>
         /// Tries exporting the given wavestream as a wave file.
@@ -94,18 +178,22 @@ namespace BitOrchestra
         {
             if (this._Stream != null)
             {
-                // NAudio needs to be persuaded to make sure the stream stays stopped.
+                // NAudio needs to be persuaded to make sure the stream stays stopped. (Something about threading issues?)
                 ((IDisposable)(this._Stream)).Dispose();
                 this._Stream = null;
             }
             this._Player.Stop();
+            this._Player.Dispose();
+            this._Player = null;
         }
 
         public void Dispose()
         {
-            this._Player.Dispose();
+            if (this._Player != null)
+            {
+                this.Stop();
+            }
         }
-
 
         private IWavePlayer _Player;
         private WaveStream _Stream;
