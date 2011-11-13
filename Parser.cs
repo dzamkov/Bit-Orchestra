@@ -18,33 +18,50 @@ namespace BitOrchestra
             Expression = null;
             Options = new SoundOptions();
 
-            int index = 0;
-            AcceptExtendedWhitespace(Text, ref index);
+            Dictionary<string, Expression> variables = new Dictionary<string, Expression>();
+            variables[Parameter] = IdentityExpression.Instance;
 
-            // Parse options
-            string optname = null;
-            int optvalue = 0;
-            while (AcceptOption(Text, ref index, ref optname, ref optvalue, out ErrorIndex))
+            int index = 0;
+            while (true)
             {
-                switch (optname)
+                AcceptExtendedWhitespace(Text, ref index);
+                int sindex = index;
+
+                string optname = null;
+                int optvalue = 0;
+                if (AcceptOption(Text, ref sindex, ref optname, ref optvalue, out ErrorIndex))
                 {
-                    case "rate":
-                        Options.Rate = optvalue;
-                        break;
-                    case "offset":
-                        Options.Offset = optvalue;
-                        break;
-                    case "length":
-                        Options.Length = optvalue;
-                        break;
-                    default:
-                        break;
+                    switch (optname)
+                    {
+                        case "rate":
+                            Options.Rate = optvalue;
+                            break;
+                        case "offset":
+                            Options.Offset = optvalue;
+                            break;
+                        case "length":
+                            Options.Length = optvalue;
+                            break;
+                        default:
+                            break;
+                    }
+                    index = sindex;
+                    continue;
                 }
 
-                AcceptExtendedWhitespace(Text, ref index);
+                string varname = null;
+                Expression varvalue = null;
+                if (AcceptAssignment(variables, Text, ref sindex, ref varname, ref varvalue, out ErrorIndex))
+                {
+                    variables[varname] = varvalue;
+                    index = sindex;
+                    continue;
+                }
+
+                break;
             }
-            
-            if (AcceptExpression(Text, ref index, ref Expression, out ErrorIndex))
+
+            if (AcceptExpression(variables, Text, ref index, ref Expression, out ErrorIndex))
             {
                 ErrorIndex = index;
                 AcceptExtendedWhitespace(Text, ref index);
@@ -138,6 +155,33 @@ namespace BitOrchestra
                 }
             }
 
+            return false;
+        }
+
+        /// <summary>
+        /// Tries parsing an assignment.
+        /// </summary>
+        public static bool AcceptAssignment(Dictionary<string, Expression> Variables, string Text, ref int Index, ref string Name, ref Expression Value, out int ErrorIndex)
+        {
+            ErrorIndex = Index;
+            int cur = Index;
+            if (AcceptWord(Text, ref cur, ref Name))
+            {
+                AcceptExtendedWhitespace(Text, ref cur);
+                if (AcceptString("=", Text, ref cur))
+                {
+                    AcceptExtendedWhitespace(Text, ref cur);
+                    if (AcceptExpression(Variables, Text, ref cur, ref Value, out ErrorIndex))
+                    {
+                        AcceptExtendedWhitespace(Text, ref cur);
+                        if (AcceptString(";", Text, ref cur))
+                        {
+                            Index = cur;
+                            return true;
+                        }
+                    }
+                }
+            }
             return false;
         }
 
@@ -324,10 +368,10 @@ namespace BitOrchestra
         /// <summary>
         /// Tries parsing an expression in the given text.
         /// </summary>
-        public static bool AcceptExpression(string Text, ref int Index, ref Expression Expression, out int ErrorIndex)
+        public static bool AcceptExpression(Dictionary<string, Expression> Variables, string Text, ref int Index, ref Expression Expression, out int ErrorIndex)
         {
             ErrorIndex = Index;
-            if (AcceptTerm(Text, ref Index, ref Expression, out ErrorIndex))
+            if (AcceptTerm(Variables, Text, ref Index, ref Expression, out ErrorIndex))
             {
                 _OpTree curtree = new _OpTree(Expression);
                 int cur = Index;
@@ -338,7 +382,7 @@ namespace BitOrchestra
                     if (AcceptOperator(Text, ref cur, ref op))
                     {
                         AcceptExtendedWhitespace(Text, ref cur);
-                        if (AcceptTerm(Text, ref cur, ref Expression, out ErrorIndex))
+                        if (AcceptTerm(Variables, Text, ref cur, ref Expression, out ErrorIndex))
                         {
                             curtree = _OpTree.Combine(curtree, op, Expression);
                             Index = cur;
@@ -499,7 +543,7 @@ namespace BitOrchestra
         /// <summary>
         /// Tries parsing a term in the given text.
         /// </summary>
-        public static bool AcceptTerm(string Text, ref int Index, ref Expression Term, out int ErrorIndex)
+        public static bool AcceptTerm(Dictionary<string, Expression> Variables, string Text, ref int Index, ref Expression Term, out int ErrorIndex)
         {
             if (AcceptLiteral(Text, ref Index, ref Term, out ErrorIndex))
                 return true;
@@ -509,9 +553,8 @@ namespace BitOrchestra
 
             if (AcceptWord(Text, ref cur, ref word))
             {
-                if (word == Parameter)
+                if (Variables.TryGetValue(word, out Term))
                 {
-                    Term = IdentityExpression.Instance;
                     Index = cur;
                     return true;
                 }
@@ -520,7 +563,7 @@ namespace BitOrchestra
             if (AcceptString("(", Text, ref cur))
             {
                 AcceptExtendedWhitespace(Text, ref cur);
-                if (AcceptExpression(Text, ref cur, ref Term, out ErrorIndex))
+                if (AcceptExpression(Variables, Text, ref cur, ref Term, out ErrorIndex))
                 {
                     AcceptExtendedWhitespace(Text, ref cur);
                     if (AcceptString(")", Text, ref cur))
@@ -542,7 +585,7 @@ namespace BitOrchestra
                 while (true)
                 {
                     AcceptExtendedWhitespace(Text, ref cur);
-                    if (AcceptExpression(Text, ref cur, ref Term, out ErrorIndex))
+                    if (AcceptExpression(Variables, Text, ref cur, ref Term, out ErrorIndex))
                     {
                         items.Add(Term);
                         if (AcceptString(",", Text, ref cur))
@@ -555,7 +598,7 @@ namespace BitOrchestra
 
                 if (AcceptString("]", Text, ref cur) && items.Count > 0)
                 {
-                    if (AcceptTerm(Text, ref cur, ref Term, out ErrorIndex))
+                    if (AcceptTerm(Variables, Text, ref cur, ref Term, out ErrorIndex))
                     {
                         Term = new SequencerExpression(items, Term);
                         Index = cur;
