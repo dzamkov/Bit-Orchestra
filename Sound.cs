@@ -217,7 +217,7 @@ namespace BitOrchestra
         {
             this._Exporting = Exporting;
             this._Options = Options;
-            this._Evaluator = Evaluator;
+            this._Evaluator = Evaluator.GetBuffered(BufferSize);
             this._Offset = BufferSize;
             this._Parameter = Options.Offset;
 
@@ -356,7 +356,7 @@ namespace BitOrchestra
 
         private bool _Exporting;
         private SoundOptions _Options;
-        private Evaluator _Evaluator;
+        private BufferedEvaluator _Evaluator;
         private Value _Parameter;
         private Value[] _Buffer;
         private int _Offset;

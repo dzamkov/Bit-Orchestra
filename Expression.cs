@@ -17,7 +17,20 @@ namespace BitOrchestra
         public Evaluator GetEvaluator(Dictionary<Expression, Evaluator> Cache, int BufferSize, int Resolution)
         {
             Evaluator eval;
-            if (!Cache.TryGetValue(this, out eval))
+            if (Cache.TryGetValue(this, out eval))
+            {
+                // Make sure the cached version is buffered, so its results can be reused.
+                if (!(eval is ConstantEvaluator) && !(eval is IdentityEvaluator))
+                {
+                    BufferedEvaluator beval = eval.GetBuffered(BufferSize);
+                    if (eval != beval)
+                    {
+                        eval = beval;
+                        Cache[this] = beval;
+                    }
+                }
+            }
+            else
             {
                 eval = this.CreateEvaluator(Cache, BufferSize, Resolution);
                 Cache[this] = eval;
@@ -64,7 +77,7 @@ namespace BitOrchestra
 
         protected override Evaluator CreateEvaluator(Dictionary<Expression,Evaluator> Cache, int BufferSize, int Resolution)
         {
-            return new ConstantEvaluator(BufferSize, this.Value);
+            return new ConstantEvaluator(this.Value);
         }
     }
 
@@ -95,7 +108,7 @@ namespace BitOrchestra
 
         protected override Evaluator CreateEvaluator(Dictionary<Expression,Evaluator> Cache, int BufferSize, int Resolution)
         {
-            return new IdentityEvaluator(BufferSize);
+            return IdentityEvaluator.Instance;
         }
     }
 
@@ -126,7 +139,7 @@ namespace BitOrchestra
 
         protected override Evaluator CreateEvaluator(Dictionary<Expression, Evaluator> Cache, int BufferSize, int Resolution)
         {
-            return new ConstantEvaluator(BufferSize, Resolution);
+            return new ConstantEvaluator(Resolution);
         }
     }
 
@@ -211,93 +224,93 @@ namespace BitOrchestra
             {
                 case BinaryOperation.Add:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval + rightval);
+                        return new ConstantEvaluator(leftval + rightval);
                     if (constleft)
-                        return new AddConstantEvaluator(BufferSize, righteval, leftval);
+                        return new AddConstantEvaluator(righteval, leftval);
                     if (constright)
-                        return new AddConstantEvaluator(BufferSize, lefteval, rightval);
-                    return new AddEvaluator(BufferSize, lefteval, righteval);
+                        return new AddConstantEvaluator(lefteval, rightval);
+                    return new AddEvaluator(lefteval, righteval.GetBuffered(BufferSize));
 
                 case BinaryOperation.Subtract:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval - rightval);
+                        return new ConstantEvaluator(leftval - rightval);
                     if (constleft)
-                        return new AddConstantEvaluator(BufferSize, righteval, -leftval);
+                        return new AddConstantEvaluator(righteval, -leftval);
                     if (constright)
-                        return new AddConstantEvaluator(BufferSize, lefteval, -rightval);
-                    return new SubtractEvaluator(BufferSize, lefteval, righteval);
+                        return new AddConstantEvaluator(lefteval, -rightval);
+                    return new SubtractEvaluator(lefteval, righteval.GetBuffered(BufferSize));
 
                 case BinaryOperation.Multiply:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval * rightval);
+                        return new ConstantEvaluator(leftval * rightval);
                     if (constleft)
-                        return new MultiplyConstantEvaluator(BufferSize, righteval, leftval);
+                        return new MultiplyConstantEvaluator(righteval, leftval);
                     if (constright)
-                        return new MultiplyConstantEvaluator(BufferSize, lefteval, rightval);
-                    return new MultiplyEvaluator(BufferSize, lefteval, righteval);
+                        return new MultiplyConstantEvaluator(lefteval, rightval);
+                    return new MultiplyEvaluator(lefteval, righteval.GetBuffered(BufferSize));
 
                 case BinaryOperation.Divide:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval / rightval);
+                        return new ConstantEvaluator(leftval / rightval);
                     if (constleft)
-                        return new DivideEvaluator(BufferSize, lefteval, righteval);
+                        return new DivideEvaluator(lefteval, righteval.GetBuffered(BufferSize));
                     if (constright)
-                        return new DivideConstantEvaluator(BufferSize, lefteval, rightval);
-                    return new DivideEvaluator(BufferSize, lefteval, righteval);
+                        return new DivideConstantEvaluator(lefteval, rightval);
+                    return new DivideEvaluator(lefteval, righteval.GetBuffered(BufferSize));
 
                 case BinaryOperation.Modulus:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval % rightval);
+                        return new ConstantEvaluator(leftval % rightval);
                     if (constleft)
-                        return new ModulusEvaluator(BufferSize, lefteval, righteval);
+                        return new ModulusEvaluator(lefteval, righteval.GetBuffered(BufferSize));
                     if (constright)
-                        return new ModulusConstantEvaluator(BufferSize, lefteval, rightval);
-                    return new ModulusEvaluator(BufferSize, lefteval, righteval);
+                        return new ModulusConstantEvaluator(lefteval, rightval);
+                    return new ModulusEvaluator(lefteval, righteval.GetBuffered(BufferSize));
 
                 case BinaryOperation.Or:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval | rightval);
+                        return new ConstantEvaluator(leftval | rightval);
                     if (constleft)
-                        return new OrEvaluator(BufferSize, lefteval, righteval);
+                        return new OrEvaluator(lefteval, righteval.GetBuffered(BufferSize));
                     if (constright)
-                        return new OrEvaluator(BufferSize, lefteval, righteval);
-                    return new OrEvaluator(BufferSize, lefteval, righteval);
+                        return new OrEvaluator(lefteval, righteval.GetBuffered(BufferSize));
+                    return new OrEvaluator(lefteval, righteval.GetBuffered(BufferSize));
                     
                 case BinaryOperation.And:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval & rightval);
+                        return new ConstantEvaluator(leftval & rightval);
                     if (constleft)
-                        return new AndEvaluator(BufferSize, lefteval, righteval);
+                        return new AndEvaluator(lefteval, righteval.GetBuffered(BufferSize));
                     if (constright)
-                        return new AndEvaluator(BufferSize, lefteval, righteval);
-                    return new AndEvaluator(BufferSize, lefteval, righteval);
+                        return new AndEvaluator(lefteval, righteval.GetBuffered(BufferSize));
+                    return new AndEvaluator(lefteval, righteval.GetBuffered(BufferSize));
 
                 case BinaryOperation.Xor:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval ^ rightval);
+                        return new ConstantEvaluator(leftval ^ rightval);
                     if (constleft)
-                        return new XorEvaluator(BufferSize, lefteval, righteval);
+                        return new XorEvaluator(lefteval, righteval.GetBuffered(BufferSize));
                     if (constright)
-                        return new XorEvaluator(BufferSize, lefteval, righteval);
-                    return new XorEvaluator(BufferSize, lefteval, righteval);
+                        return new XorEvaluator(lefteval, righteval.GetBuffered(BufferSize));
+                    return new XorEvaluator(lefteval, righteval.GetBuffered(BufferSize));
 
                 case BinaryOperation.LeftShift:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval << (int)rightval);
+                        return new ConstantEvaluator(leftval << (int)rightval);
                     if (constleft)
-                        return new LeftShiftEvaluator(BufferSize, lefteval, righteval);
+                        return new LeftShiftEvaluator(lefteval, righteval.GetBuffered(BufferSize));
                     if (constright)
-                        return new LeftShiftConstantEvaluator(BufferSize, lefteval, (int)rightval);
-                    return new LeftShiftEvaluator(BufferSize, lefteval, righteval);
+                        return new LeftShiftConstantEvaluator(lefteval, (int)rightval);
+                    return new LeftShiftEvaluator(lefteval, righteval.GetBuffered(BufferSize));
 
                 case BinaryOperation.RightShift:
                     if (constleft && constright)
-                        return new ConstantEvaluator(BufferSize, leftval >> (int)rightval);
+                        return new ConstantEvaluator(leftval >> (int)rightval);
                     if (constleft)
-                        return new RightShiftEvaluator(BufferSize, lefteval, righteval);
+                        return new RightShiftEvaluator(lefteval, righteval.GetBuffered(BufferSize));
                     if (constright)
-                        return new RightShiftConstantEvaluator(BufferSize, lefteval, (int)rightval);
-                    return new RightShiftEvaluator(BufferSize, lefteval, righteval);
+                        return new RightShiftConstantEvaluator(lefteval, (int)rightval);
+                    return new RightShiftEvaluator(lefteval, righteval.GetBuffered(BufferSize));
 
                 default:
                     throw new NotImplementedException();
@@ -387,20 +400,20 @@ namespace BitOrchestra
             {
                 case UnaryOperation.Negate:
                     if (constsrc)
-                        return new ConstantEvaluator(BufferSize, -srcval);
-                    return new NegateEvaluator(BufferSize, srceval);
+                        return new ConstantEvaluator(-srcval);
+                    return new NegateEvaluator(srceval);
                 case UnaryOperation.Complement:
                     if (constsrc)
-                        return new ConstantEvaluator(BufferSize, ~srcval);
-                    return new ComplementEvaluator(BufferSize, srceval);
+                        return new ConstantEvaluator(~srcval);
+                    return new ComplementEvaluator(srceval);
                 case UnaryOperation.Saw:
-                    return new SawEvaluator(BufferSize, srceval, period, scale);
+                    return new SawEvaluator(srceval, period, scale);
                 case UnaryOperation.Sine:
-                    return new SineEvaluator(BufferSize, srceval, period, scale);
+                    return new SineEvaluator(srceval, period, scale);
                 case UnaryOperation.Square:
-                    return new SquareEvaluator(BufferSize, srceval, period, scale);
+                    return new SquareEvaluator(srceval, period, scale);
                 case UnaryOperation.Triangle:
-                    return new TriangleEvaluator(BufferSize, srceval, period, scale);
+                    return new TriangleEvaluator(srceval, period, scale);
                 default:
                     throw new NotImplementedException();
             }
@@ -486,13 +499,13 @@ namespace BitOrchestra
                 return this.Items[(int)((uint)constparam.Value % (uint)this.Items.Count)].GetEvaluator(Cache, BufferSize, Resolution);
             }
 
-            Evaluator[] items = new Evaluator[this.Items.Count];
+            BufferedEvaluator[] items = new BufferedEvaluator[this.Items.Count];
             Value[] constitems = new Value[this.Items.Count];
             bool constseq = true;
             for (int t = 0; t < items.Length; t++)
             {
                 Evaluator itemeval = this.Items[t].GetEvaluator(Cache, BufferSize, Resolution);
-                items[t] = itemeval;
+                items[t] = itemeval.GetBuffered(BufferSize);
                 if (constseq)
                 {
                     ConstantEvaluator constitem = itemeval as ConstantEvaluator;
@@ -509,11 +522,11 @@ namespace BitOrchestra
 
             if (constseq)
             {
-                return new SequencerConstantEvaluator(BufferSize, constitems, this.Parameter.GetEvaluator(Cache, BufferSize, Resolution));
+                return new SequencerConstantEvaluator(constitems, this.Parameter.GetEvaluator(Cache, BufferSize, Resolution));
             }
             else
             {
-                return new SequencerEvaluator(BufferSize, items, this.Parameter.GetEvaluator(Cache, BufferSize, Resolution));
+                return new SequencerEvaluator(items, this.Parameter.GetEvaluator(Cache, BufferSize, Resolution));
             }
         }
     }
