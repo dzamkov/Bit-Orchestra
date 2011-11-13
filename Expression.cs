@@ -223,4 +223,36 @@ namespace BitOrchestra
         LeftShift,
         RightShift
     }
+
+    /// <summary>
+    /// An expression that accesses values from a sequence.
+    /// </summary>
+    public sealed class SequencerExpression : Expression
+    {
+        public SequencerExpression(List<Expression> Items, Expression Parameter)
+        {
+            this.Items = Items;
+            this.Parameter = Parameter;
+        }
+
+        /// <summary>
+        /// The items in the sequence.
+        /// </summary>
+        public readonly List<Expression> Items;
+
+        /// <summary>
+        /// The parameter used for lookup in the sequence.
+        /// </summary>
+        public readonly Expression Parameter;
+
+        public override Evaluator GetEvaluator(int BufferSize)
+        {
+            Evaluator[] items = new Evaluator[this.Items.Count];
+            for (int t = 0; t < items.Length; t++)
+            {
+                items[t] = this.Items[t].GetEvaluator(BufferSize);
+            }
+            return new SequencerEvaluator(BufferSize, items, this.Parameter.GetEvaluator(BufferSize));
+        }
+    }
 }

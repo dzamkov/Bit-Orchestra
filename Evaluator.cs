@@ -499,4 +499,55 @@ namespace BitOrchestra
             }
         }
     }
+
+    /// <summary>
+    /// An evaluator for a sequencer.
+    /// </summary>
+    public sealed class SequencerEvaluator : Evaluator
+    {
+        public SequencerEvaluator(int BufferSize, Evaluator[] Items, Evaluator Parameter)
+        {
+            this.Items = Items;
+            this.Parameter = Parameter;
+
+            this.ItemBuffers = new int[Items.Length][];
+            for (int t = 0; t < Items.Length; t++)
+            {
+                this.ItemBuffers[t] = new int[BufferSize];
+            }
+        }
+
+        /// <summary>
+        /// The evaluator for the items of the sequence.
+        /// </summary>
+        public readonly Evaluator[] Items;
+
+        /// <summary>
+        /// The evaluator for the parameter of the sequence.
+        /// </summary>
+        public readonly Evaluator Parameter;
+
+        /// <summary>
+        /// The buffers for the items of this sequencer.
+        /// </summary>
+        public readonly int[][] ItemBuffers;
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            // Keep track of what items are generated
+            bool[] generated = new bool[Items.Length];
+
+            this.Parameter.Generate(Start, Buffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                uint param = (uint)Buffer[t] % (uint)this.Items.Length;
+                if (!generated[param])
+                {
+                    this.Items[param].Generate(Start, this.ItemBuffers[param]);
+                    generated[param] = true;
+                }
+                Buffer[t] = this.ItemBuffers[param][t];
+            }
+        }
+    }
 }

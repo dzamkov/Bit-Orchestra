@@ -534,6 +534,41 @@ namespace BitOrchestra
                 return false;
             }
 
+            // Sequencer
+            if (AcceptString("[", Text, ref cur))
+            {
+                List<Expression> items = new List<Expression>();
+                ErrorIndex = cur;
+                while (true)
+                {
+                    AcceptExtendedWhitespace(Text, ref cur);
+                    if (AcceptExpression(Text, ref cur, ref Term, out ErrorIndex))
+                    {
+                        items.Add(Term);
+                        if (AcceptString(",", Text, ref cur))
+                        {
+                            continue;
+                        }
+                    }
+                    break;
+                }
+
+                if (AcceptString("]", Text, ref cur) && items.Count > 0)
+                {
+                    if (AcceptTerm(Text, ref cur, ref Term, out ErrorIndex))
+                    {
+                        Term = new SequencerExpression(items, Term);
+                        Index = cur;
+                        return true;
+                    }
+                }
+                else
+                {
+                    ErrorIndex = cur;
+                    return false;
+                }
+            }
+
             return false;
         }
 
