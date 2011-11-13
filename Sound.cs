@@ -27,6 +27,11 @@ namespace BitOrchestra
         /// The length of the sound in samples, used for exporting.
         /// </summary>
         public int Length = 0;
+
+        /// <summary>
+        /// The amount of bits of resolution in the output of the sound.
+        /// </summary>
+        public int Resolution = 8;
     }
 
     /// <summary>
@@ -150,6 +155,7 @@ namespace BitOrchestra
             }
             catch
             {
+                this._Player = null;
                 this._Stream = null;
                 return false;
             }
@@ -209,34 +215,31 @@ namespace BitOrchestra
             this._Exporting = Exporting;
             this._Options = Options;
             this._Evaluator = Evaluator;
-            this._Buffer = new int[BufferSize];
             this._Offset = BufferSize;
             this._Parameter = Options.Offset;
+
+            // Calculate shift and sample size
+            int res = Options.Resolution;
+            int sampsize = (res + 7) / 8;
+            int shift = sampsize * 8 - res;
+            this._SampleSize = sampsize;
+            this._Shift = shift;
+
+            // Generate initial buffer
+            this._Advance();
         }
 
         public EvaluatorStream(int BufferSize, Expression Expression, SoundOptions Options, bool Exporting)
+            : this(BufferSize, Expression.GetEvaluator(new Dictionary<Expression,Evaluator>(), BufferSize, Options.Resolution), Options, Exporting)
         {
-            this._Exporting = Exporting;
-            this._Options = Options;
-            this._Evaluator = Expression.GetEvaluator(BufferSize);
-            this._Buffer = new int[BufferSize];
-            this._Offset = BufferSize;
-            this._Parameter = Options.Offset;
-        }
 
-        /// <summary>
-        /// Gets the wave format for the given sound options.
-        /// </summary>
-        public static WaveFormat GetFormat(SoundOptions Options)
-        {
-            return new WaveFormat(Options.Rate, 8, 1);
         }
 
         public override WaveFormat WaveFormat
         {
             get
             {
-                return GetFormat(this._Options);
+                return new WaveFormat(this._Options.Rate, this._SampleSize * 8, 1);
             }
         }
 
@@ -244,7 +247,7 @@ namespace BitOrchestra
         {
             get
             {
-                return this._Options.Length;
+                return this._Options.Length * this._SampleSize;
             }
         }
 
@@ -252,11 +255,11 @@ namespace BitOrchestra
         {
             get
             {
-                return this._Parameter - this._Options.Offset;
+                return (this._Parameter - this._Options.Offset) * this._SampleSize;
             }
             set
             {
-                this._Parameter = this._Options.Offset + (int)value;
+                this._Parameter = (this._Options.Offset + (int)value) / this._SampleSize;
             }
         }
 
@@ -271,40 +274,70 @@ namespace BitOrchestra
             if (this._Exporting)
                 count = Math.Min(count, this._Options.Length - this._Parameter);
 
+            // Find sample size and shift amount
+            int sampsize = this._SampleSize;
+            int shift = this._Shift;
+
             int ocount = count;
+            count /= this._SampleSize; // Its more useful to treat count as a sample count rather than a byte count.
+
             while (true)
             {
                 int sampsleft = this._Buffer.Length - this._Offset;
+                int toread = Math.Min(count, sampsleft);
+                int ofs = this._Offset;
+                for (int t = 0; t < toread; t++)
+                {
+                    int val = this._Buffer[ofs];
+
+                    if (shift == 0 && this._SampleSize == 1)
+                    {
+                        // Direct byte copying is faster
+                        buffer[offset] = (byte)val;
+                        offset++;
+                    }
+                    else
+                    {
+                        // Copy the first byte manually, since a unique leftshift must be applied.
+                        buffer[offset] = (byte)(val << shift);
+                        offset++;
+
+                        int sf = 8 - shift;
+                        for (int i = 1; i < sampsize; i++)
+                        {
+                            buffer[offset] = (byte)(val >> sf);
+                            sf += 8;
+                            offset++;
+                        }
+                    }
+
+                    ofs++;
+                }
+                this._Offset = ofs;
+                count -= toread;
+
                 if (count < sampsleft)
                 {
-                    int ofs = this._Offset;
-                    for (int t = 0; t < count; t++)
-                    {
-                        buffer[offset] = (byte)this._Buffer[ofs];
-                        offset++;
-                        ofs++;
-                    }
-                    this._Offset = ofs;
                     break;
                 }
                 else
                 {
-                    int ofs = this._Offset;
-                    for (int t = 0; t < sampsleft; t++)
-                    {
-                        buffer[offset] = (byte)this._Buffer[ofs];
-                        offset++;
-                        ofs++;
-                    }
-                    count -= sampsleft;
-
-                    this._Evaluator.Generate(this._Parameter, this._Buffer);
-                    this._Parameter += this._Buffer.Length;
-                    this._Offset = 0;
+                    this._Advance();
                     continue;
                 }
             }
             return ocount;
+        }
+
+        /// <summary>
+        /// Generates the next buffer and advances the parameter.
+        /// </summary>
+        private void _Advance()
+        {
+            this._Evaluator.Invalidate();
+            this._Buffer = this._Evaluator.Generate(this._Parameter);
+            this._Parameter += this._Buffer.Length;
+            this._Offset = 0;
         }
 
         void IDisposable.Dispose()
@@ -318,5 +351,8 @@ namespace BitOrchestra
         private int[] _Buffer;
         private int _Offset;
         private int _Parameter;
+
+        private int _SampleSize;
+        private int _Shift;
     }
 }

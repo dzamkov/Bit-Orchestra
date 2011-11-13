@@ -65,8 +65,7 @@ namespace BitOrchestra
         {
             Expression expr;
             SoundOptions opts;
-            int errorindex;
-            if (Parser.Parse(this._Text.Text, out expr, out opts, out errorindex))
+            if (this._Parse(out expr, out opts))
             {
                 if (this._Sound.Play(new EvaluatorStream(4096, expr, opts, false)))
                 {
@@ -74,13 +73,38 @@ namespace BitOrchestra
                 }
                 else
                 {
+                    MessageBox.Show("Could not create sound output, check values of \"#rate\" and \"#resolution\".", MessageBoxCaption, MessageBoxButtons.OK);
                     this._SetPlayStopState(PlayStopState.Play);
                 }
             }
             else
             {
-                this._Text.Select(errorindex, 0);
                 this._SetPlayStopState(PlayStopState.Play);
+            }
+        }
+
+        /// <summary>
+        /// Tries parsing the contents of this form, displaying the appropriate messages on failure.
+        /// </summary>
+        private bool _Parse(out Expression Expression, out SoundOptions Options)
+        {
+            int errorindex;
+            if (Parser.Parse(this._Text.Text, out Expression, out Options, out errorindex))
+            {
+                if (Expression != null)
+                {
+                    return true;
+                }
+                else
+                {
+                    MessageBox.Show("The result variable \"" + Parser.Result + "\" must be defined", MessageBoxCaption, MessageBoxButtons.OK);
+                    return false;
+                }
+            }
+            else
+            {
+                this._Text.Select(errorindex, 0);
+                return false;
             }
         }
 
@@ -192,8 +216,7 @@ namespace BitOrchestra
         {
             Expression expr;
             SoundOptions opts;
-            int errorindex;
-            if (Parser.Parse(this._Text.Text, out expr, out opts, out errorindex))
+            if (this._Parse(out expr, out opts))
             {
                 if (opts.Length != 0)
                 {
@@ -211,13 +234,8 @@ namespace BitOrchestra
                 }
                 else
                 {
-                    MessageBox.Show("The \"#length\" option must be set to export.", MessageBoxCaption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("The \"#length\" option must be set to export.", MessageBoxCaption, MessageBoxButtons.OK);
                 }
-            }
-            else
-            {
-                this._Text.Select(errorindex, 0);
-                MessageBox.Show("Syntax error", MessageBoxCaption, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

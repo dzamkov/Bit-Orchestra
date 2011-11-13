@@ -20,6 +20,7 @@ namespace BitOrchestra
 
             Dictionary<string, Expression> variables = new Dictionary<string, Expression>();
             variables[Parameter] = IdentityExpression.Instance;
+            variables[Resolution] = ResolutionExpression.Instance;
 
             int index = 0;
             while (true)
@@ -42,6 +43,9 @@ namespace BitOrchestra
                         case "length":
                             Options.Length = optvalue;
                             break;
+                        case "resolution":
+                            Options.Resolution = optvalue;
+                            break;
                         default:
                             break;
                     }
@@ -61,14 +65,11 @@ namespace BitOrchestra
                 break;
             }
 
-            if (AcceptExpression(variables, Text, ref index, ref Expression, out ErrorIndex))
+            AcceptExtendedWhitespace(Text, ref index);
+            if (index == Text.Length)
             {
-                ErrorIndex = index;
-                AcceptExtendedWhitespace(Text, ref index);
-                if (index == Text.Length)
-                {
-                    return true;
-                }
+                variables.TryGetValue(Result, out Expression);
+                return true;
             }
 
             return false;
@@ -619,6 +620,16 @@ namespace BitOrchestra
         /// The variable for the parameter of an expression.
         /// </summary>
         public static string Parameter = "t";
+
+        /// <summary>
+        /// The variable for the resolution of a running expression.
+        /// </summary>
+        public static string Resolution = "r";
+
+        /// <summary>
+        /// The variable for the result of an expression.
+        /// </summary>
+        public static string Result = "u";
     }
 
     /// <summary>
