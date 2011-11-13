@@ -550,4 +550,36 @@ namespace BitOrchestra
             }
         }
     }
+
+    /// <summary>
+    /// A sequencer evaluator for items that are constants.
+    /// </summary>
+    public sealed class SequencerConstantEvaluator : Evaluator
+    {
+        public SequencerConstantEvaluator(int[] Items, Evaluator Parameter)
+        {
+            this.Items = Items;
+            this.Parameter = Parameter;
+        }
+
+        /// <summary>
+        /// The items of the sequence.
+        /// </summary>
+        public readonly int[] Items;
+
+        /// <summary>
+        /// The evaluator for the parameter of the sequence.
+        /// </summary>
+        public readonly Evaluator Parameter;
+
+        public override void Generate(int Start, int[] Buffer)
+        {
+            this.Parameter.Generate(Start, Buffer);
+            for (int t = 0; t < Buffer.Length; t++)
+            {
+                uint param = (uint)Buffer[t] % (uint)this.Items.Length;
+                Buffer[t] = this.Items[param];
+            }
+        }
+    }
 }

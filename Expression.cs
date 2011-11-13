@@ -247,12 +247,41 @@ namespace BitOrchestra
 
         public override Evaluator GetEvaluator(int BufferSize)
         {
+            ConstantEvaluator constparam = this.Parameter.GetEvaluator(BufferSize) as ConstantEvaluator;
+            if (constparam != null)
+            {
+                return this.Items[(int)((uint)constparam.Value % (uint)this.Items.Count)].GetEvaluator(BufferSize);
+            }
+
             Evaluator[] items = new Evaluator[this.Items.Count];
+            int[] constitems = new int[this.Items.Count];
+            bool constseq = true;
             for (int t = 0; t < items.Length; t++)
             {
-                items[t] = this.Items[t].GetEvaluator(BufferSize);
+                Evaluator itemeval = this.Items[t].GetEvaluator(BufferSize);
+                items[t] = itemeval;
+                if (constseq)
+                {
+                    ConstantEvaluator constitem = itemeval as ConstantEvaluator;
+                    if (constitem != null)
+                    {
+                        constitems[t] = constitem.Value;
+                    }
+                    else
+                    {
+                        constseq = false;
+                    }
+                }
             }
-            return new SequencerEvaluator(BufferSize, items, this.Parameter.GetEvaluator(BufferSize));
+
+            if (constseq)
+            {
+                return new SequencerConstantEvaluator(constitems, this.Parameter.GetEvaluator(BufferSize));
+            }
+            else
+            {
+                return new SequencerEvaluator(BufferSize, items, this.Parameter.GetEvaluator(BufferSize));
+            }
         }
     }
 }
