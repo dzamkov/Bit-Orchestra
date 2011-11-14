@@ -128,13 +128,13 @@ namespace BitOrchestra
         }
 
         /// <summary>
-        /// Gets if this sound is currently playing.
+        /// Gets if this sound is currently active.
         /// </summary>
-        public bool IsPlaying
+        public bool IsActive
         {
             get
             {
-                return this._Player.PlaybackState == PlaybackState.Playing;
+                return this._Player != null;
             }
         }
 
@@ -191,16 +191,19 @@ namespace BitOrchestra
                 ((IDisposable)(this._Stream)).Dispose();
                 this._Stream = null;
             }
-            this._Player.Stop();
-            this._Player.Dispose();
-            this._Player = null;
+            if (this._Player != null)
+            {
+                this._Player.Stop();
+                this._Player.Dispose();
+                this._Player = null;
+            }
         }
 
         public void Dispose()
         {
             if (this._Player != null)
             {
-                this.Stop();
+                this._Player.Dispose();
             }
         }
 

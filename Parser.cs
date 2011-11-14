@@ -42,10 +42,10 @@ namespace BitOrchestra
             {
                 index = 0;
                 string target = Text.Substring(TargetIndex, TargetLength);
-                AcceptExtendedWhitespace(Text, ref index);
+                AcceptExtendedWhitespace(target, ref index);
                 if (AcceptExpression(variables, target, ref index, ref Expression, out ErrorIndex))
                 {
-                    AcceptExtendedWhitespace(Text, ref index);
+                    AcceptExtendedWhitespace(target, ref index);
                     if (index == TargetLength)
                     {
                         return true;

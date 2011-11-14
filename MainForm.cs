@@ -38,6 +38,13 @@ namespace BitOrchestra
             text.ScrollBars = ScrollBars.Vertical;
             this.Controls.Add(text);
             text.TextChanged += this._TextChanged;
+            text.ContextMenu = new ContextMenu(new MenuItem[]
+            {
+                new MenuItem("Cut", this._CutClick),
+                new MenuItem("Copy", this._CopyClick),
+                new MenuItem("Paste", this._PasteClick),
+                new MenuItem("Play This", this._PlayThisClick, Shortcut.F6),
+            });
             this._Text = text;
 
             // Menu
@@ -45,8 +52,7 @@ namespace BitOrchestra
             menu.Items.Add(new ToolStripMenuItem("Save", null, this._SaveClick, Keys.Control | Keys.S));
             menu.Items.Add(new ToolStripMenuItem("Load", null, this._LoadClick, Keys.Control | Keys.L));
             menu.Items.Add(new ToolStripMenuItem("Export", null, this._ExportClick, Keys.Control | Keys.E));
-            menu.Items.Add(this._PlayStop = new ToolStripMenuItem("Play", null, this._PlayStopClick, Keys.F5));
-            this._SetPlayStopState(PlayStopState.Play);
+            menu.Items.Add(this._PlayStop = new ToolStripMenuItem(_PlayText, null, this._PlayStopClick, Keys.F5));
             this.Controls.Add(menu);
             this._Menu = menu;
         }
@@ -61,25 +67,39 @@ namespace BitOrchestra
             this._Sound.Dispose();
         }
 
+        /// <summary>
+        /// Plays the given expression with the given options.
+        /// </summary>
+        private void _Play(Expression Expression, SoundOptions Options)
+        {
+            this._Sound.Stop(); // Just to make sure.
+            if (this._Sound.Play(new EvaluatorStream(4096, Expression, Options, false)))
+            {
+                this._Update = false;
+                this._PlayStop.Text = _StopText;
+            }
+            else
+            {
+                MessageBox.Show("Could not create sound output, check values of \"#rate\" and \"#resolution\".", MessageBoxCaption, MessageBoxButtons.OK);
+                this._PlayStop.Text = _PlayText;
+            }
+        }
+
+        /// <summary>
+        /// Plays the current contents of the form.
+        /// </summary>
         private void _Play()
         {
             Expression expr;
             SoundOptions opts;
             if (this._Parse(out expr, out opts))
             {
-                if (this._Sound.Play(new EvaluatorStream(4096, expr, opts, false)))
-                {
-                    this._SetPlayStopState(PlayStopState.Stop);
-                }
-                else
-                {
-                    MessageBox.Show("Could not create sound output, check values of \"#rate\" and \"#resolution\".", MessageBoxCaption, MessageBoxButtons.OK);
-                    this._SetPlayStopState(PlayStopState.Play);
-                }
+                this._Play(expr, opts);
             }
             else
             {
-                this._SetPlayStopState(PlayStopState.Play);
+                this._Sound.Stop();
+                this._PlayStop.Text = _PlayText;
             }
         }
 
@@ -108,47 +128,30 @@ namespace BitOrchestra
             }
         }
 
-        private void _PlayStopClick(object sender, EventArgs e)
+        /// <summary>
+        /// Tries parsing the selected contents of this form, displaying the appropriate messages on failure.
+        /// </summary>
+        private bool _ParseSelected(out Expression Expression, out SoundOptions Options)
         {
-            switch (this._PlayStopState)
+            Expression = null;
+            Options = null;
+            int targetindex = this._Text.SelectionStart;
+            int targetlength = this._Text.SelectionLength;
+            int errorindex = targetindex;
+            if (targetlength > 0 && Parser.Parse(this._Text.Text, targetindex, targetlength, out Expression, out Options, out errorindex))
             {
-                case PlayStopState.Play:
-                    this._Play();
-                    break;
-                case PlayStopState.Stop:
-                    this._Sound.Stop();
-                    this._SetPlayStopState(PlayStopState.Play);
-                    break;
-                case PlayStopState.Update:
-                    this._Sound.Stop();
-                    this._Play();
-                    break;
+                return true;
+            }
+            else
+            {
+                this._Text.Select(errorindex, 0);
+                return false;
             }
         }
 
-        private void _TextChanged(object sender, EventArgs e)
-        {
-            if (this._PlayStopState == PlayStopState.Stop)
-                this._SetPlayStopState(PlayStopState.Update);
-            this._Saved = false;
-        }
-
-        private void _SetPlayStopState(PlayStopState State)
-        {
-            this._PlayStopState = State;
-            switch (State)
-            {
-                case PlayStopState.Play:
-                    this._PlayStop.Text = "Play";
-                    break;
-                case PlayStopState.Stop:
-                    this._PlayStop.Text = "Stop";
-                    break;
-                case PlayStopState.Update:
-                    this._PlayStop.Text = "Update";
-                    break;
-            }
-        }
+        private static readonly string _PlayText = "Play";
+        private static readonly string _StopText = "Stop";
+        private static readonly string _UpdateText = "Update";
 
         /// <summary>
         /// Checks if the work is saved and prompts the user to save it if not.
@@ -261,21 +264,65 @@ namespace BitOrchestra
             this._Export();
         }
 
+        private void _PlayStopClick(object sender, EventArgs e)
+        {
+            if (this._Sound.IsActive && !this._Update)
+            {
+                this._Sound.Stop();
+                this._PlayStop.Text = _PlayText;
+            }
+            else
+            {
+                this._Play();
+                this._PlayStop.Text = _StopText;
+            }
+        }
+
+        private void _TextChanged(object sender, EventArgs e)
+        {
+            if (this._Sound.IsActive)
+            {
+                this._Update = true;
+                this._PlayStop.Text = _UpdateText;
+            }
+            this._Saved = false;
+        }
+
+        private void _CutClick(object sender, EventArgs e)
+        {
+            this._Text.Cut();
+        }
+
+        private void _CopyClick(object sender, EventArgs e)
+        {
+            this._Text.Copy();
+        }
+
+        private void _PasteClick(object sender, EventArgs e)
+        {
+            this._Text.Paste();
+        }
+
+        private void _PlayThisClick(object sender, EventArgs e)
+        {
+            Expression expr;
+            SoundOptions opts;
+            if (this._ParseSelected(out expr, out opts))
+            {
+                this._Play(expr, opts);
+            }
+            else
+            {
+                this._Sound.Stop();
+                this._PlayStop.Text = _PlayText;
+            }
+        }
+
         private bool _Saved;
-        private PlayStopState _PlayStopState;
+        private bool _Update;
         private ToolStripMenuItem _PlayStop;
         private TextBox _Text;
         private MenuStrip _Menu;
         private Sound _Sound;
-    }
-
-    /// <summary>
-    /// Indicates a possible state for the play/stop button.
-    /// </summary>
-    public enum PlayStopState
-    {
-        Stop,
-        Play,
-        Update
     }
 }
