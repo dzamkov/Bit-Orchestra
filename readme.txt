@@ -5,6 +5,7 @@ Shortcuts:
 * Ctrl-L	Load
 * Ctrl-E	Export
 * F5		Play/Stop/Update
+* F6		Play current selection
 
 Directives:
 #rate		Sample rate
