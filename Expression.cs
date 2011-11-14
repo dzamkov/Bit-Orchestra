@@ -235,7 +235,7 @@ namespace BitOrchestra
                     if (constleft && constright)
                         return new ConstantEvaluator(leftval - rightval);
                     if (constleft)
-                        return new AddConstantEvaluator(righteval, -leftval);
+                        return new SubtractEvaluator(lefteval, righteval.GetBuffered(BufferSize));
                     if (constright)
                         return new AddConstantEvaluator(lefteval, -rightval);
                     return new SubtractEvaluator(lefteval, righteval.GetBuffered(BufferSize));

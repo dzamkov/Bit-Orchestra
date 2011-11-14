@@ -17,63 +17,78 @@ namespace BitOrchestra
         {
             Expression = null;
             Options = new SoundOptions();
-
-            Dictionary<string, Expression> variables = new Dictionary<string, Expression>();
-            variables[Parameter] = IdentityExpression.Instance;
-            variables[Resolution] = ResolutionExpression.Instance;
-
+            Dictionary<string, Expression> variables = null;
             int index = 0;
+            AcceptProgram(Text, ref index, ref variables, ref Options, out ErrorIndex);
+            if (index == Text.Length)
+            {
+                variables.TryGetValue(Result, out Expression);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Parses the given text (or as much as possible of it) and returns the expression for the specified target string, or false with an error index.
+        /// </summary>
+        public static bool Parse(string Text, int TargetIndex, int TargetLength, out Expression Expression, out SoundOptions Options, out int ErrorIndex)
+        {
+            Expression = null;
+            Options = new SoundOptions();
+            Dictionary<string, Expression> variables = null;
+            int index = 0;
+            AcceptProgram(Text, ref index, ref variables, ref Options, out ErrorIndex);
+            if (index >= TargetIndex)
+            {
+                index = 0;
+                string target = Text.Substring(TargetIndex, TargetLength);
+                AcceptExtendedWhitespace(Text, ref index);
+                if (AcceptExpression(variables, target, ref index, ref Expression, out ErrorIndex))
+                {
+                    AcceptExtendedWhitespace(Text, ref index);
+                    if (index == TargetLength)
+                    {
+                        return true;
+                    }
+                }
+                ErrorIndex += TargetIndex;
+                return false;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Parses a program in the given text.
+        /// </summary>
+        public static void AcceptProgram(string Text, ref int Index, ref Dictionary<string, Expression> Variables, ref SoundOptions Options, out int ErrorIndex)
+        {
+            Variables = new Dictionary<string, Expression>();
+            Variables[Parameter] = IdentityExpression.Instance;
+            Variables[Resolution] = ResolutionExpression.Instance;
+
             while (true)
             {
-                AcceptExtendedWhitespace(Text, ref index);
-                int sindex = index;
+                AcceptExtendedWhitespace(Text, ref Index);
 
-                string optname = null;
-                int optvalue = 0;
-                if (AcceptOption(Text, ref sindex, ref optname, ref optvalue, out ErrorIndex))
+                if (AcceptOption(Text, ref Index, Options, out ErrorIndex))
                 {
-                    switch (optname)
-                    {
-                        case "rate":
-                            Options.Rate = optvalue;
-                            break;
-                        case "offset":
-                            Options.Offset = optvalue;
-                            break;
-                        case "length":
-                            Options.Length = optvalue;
-                            break;
-                        case "resolution":
-                            Options.Resolution = optvalue;
-                            break;
-                        default:
-                            break;
-                    }
-                    index = sindex;
                     continue;
                 }
 
                 string varname = null;
                 Expression varvalue = null;
-                if (AcceptAssignment(variables, Text, ref sindex, ref varname, ref varvalue, out ErrorIndex))
+                if (AcceptAssignment(Variables, Text, ref Index, ref varname, ref varvalue, out ErrorIndex))
                 {
-                    variables[varname] = varvalue;
-                    index = sindex;
+                    Variables[varname] = varvalue;
                     continue;
                 }
 
                 break;
             }
 
-            AcceptExtendedWhitespace(Text, ref index);
-            if (index == Text.Length)
-            {
-                variables.TryGetValue(Result, out Expression);
-                return true;
-            }
-
-            return false;
+            AcceptExtendedWhitespace(Text, ref Index);
         }
+
 
         /// <summary>
         /// Tries parsing the target string in the given text.
@@ -132,6 +147,37 @@ namespace BitOrchestra
                 break;
             }
             return found;
+        }
+
+        /// <summary>
+        /// Tries parsing an option and applying it to the given sound options structure.
+        /// </summary>
+        public static bool AcceptOption(string Text, ref int Index, SoundOptions Options, out int ErrorIndex)
+        {
+            string optname = null;
+            int optvalue = 0;
+            if (AcceptOption(Text, ref Index, ref optname, ref optvalue, out ErrorIndex))
+            {
+                switch (optname)
+                {
+                    case "rate":
+                        Options.Rate = optvalue;
+                        break;
+                    case "offset":
+                        Options.Offset = optvalue;
+                        break;
+                    case "length":
+                        Options.Length = optvalue;
+                        break;
+                    case "resolution":
+                        Options.Resolution = optvalue;
+                        break;
+                    default:
+                        break;
+                }
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
