@@ -121,9 +121,9 @@ namespace BitOrchestra
         private static bool _Create(out IWavePlayer Player)
         {
             return
-                _CreateWasapi(out Player) ||
                 _CreateWaveout(out Player) ||
                 _CreateDirectSound(out Player) ||
+                _CreateWasapi(out Player) ||
                 _CreateAsio(out Player);
         }
 

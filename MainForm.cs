@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Drawing;
 using System.IO;
@@ -205,7 +206,9 @@ namespace BitOrchestra
             {
                 using (TextReader tr = new StreamReader(ofg.FileName))
                 {
-                    this._Text.Text = tr.ReadToEnd();
+                    string text = tr.ReadToEnd();
+                    text = Regex.Replace(text, @"\r\n|\n\r|\n|\r", "\r\n");
+                    this._Text.Text = text.ToString();
                     tr.Close();
                 }
                 this._Saved = true;
